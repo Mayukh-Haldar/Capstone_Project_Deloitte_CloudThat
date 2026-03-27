@@ -1,0 +1,70 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+**/.idea/
+**/.vscode/
+**/.classpath
+**/.project
+**/.factorypath
+**/.settings/
+**/.apt_generated
+**/.springBeans
+**/.sts4-cache
+*.iml
+*.ipr
+*.iws
+
+# Local env and secrets
+.env
+.env.local
+.env.prod
+.env.*.local
+vendors.env
+env/
+/nginx/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/fix_imports_log.txt
+logs/
+
+# Local archives and staging
+_zip_staging_source/
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+
+# Local dependency/cache folders
+m2/
+.dotnet-home/
+.dotnet/
+
+# Temporary deployment/runtime files
+*.pid
+*.seed
+*.stackdump
+**/dependency-reduced-pom.xml
+
+# Optional repo cleanup items
+frontend/archive/legacy-ui-archive/
+frontend/frontend/
+frontend/guidelines/
+frontend/ATTRIBUTIONS.md
+frontend/DEVELOPER_GUIDE.md
+backend/services/*/postman/
+backend/services/*/newman-results.xml
+
+# GUIDES
+BACKEND_NOTIFICATION_IMPLEMENTATION.md
+INSTALL_RECHARTS.md
+
+# Optional local IDE solution file
+Deloitte_Capstone_Project.sln

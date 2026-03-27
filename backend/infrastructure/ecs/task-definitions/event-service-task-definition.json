@@ -1,0 +1,59 @@
+{
+  "family": "eventzen-event-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__EVENT_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "event-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8082,
+          "hostPort": 8082,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "EVENT_DB_URL", "value": "__EVENT_DB_URL__" },
+        { "name": "VENUE_VENDOR_SERVICE_URL", "value": "__VENUE_VENDOR_SERVICE_URL__" },
+        { "name": "EVENT_CORS_ALLOWED_ORIGINS", "value": "__FRONTEND_ORIGIN__" },
+        { "name": "EVENT_STORAGE_ENABLED", "value": "__EVENT_STORAGE_ENABLED__" },
+        { "name": "EVENT_STORAGE_ENDPOINT", "value": "__EVENT_STORAGE_ENDPOINT__" },
+        { "name": "EVENT_STORAGE_BUCKET", "value": "__EVENT_STORAGE_BUCKET__" },
+        { "name": "EVENT_STORAGE_PUBLIC_BASE_URL", "value": "__EVENT_STORAGE_PUBLIC_BASE_URL__" },
+        { "name": "EVENT_STORAGE_EVENT_BANNERS_PREFIX", "value": "__EVENT_STORAGE_EVENT_BANNERS_PREFIX__" },
+        { "name": "EVENT_STORAGE_SPEAKER_PHOTOS_PREFIX", "value": "__EVENT_STORAGE_SPEAKER_PHOTOS_PREFIX__" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" },
+        { "name": "MANAGEMENT_TRACING_SAMPLING_PROBABILITY", "value": "1.0" }
+      ],
+      "secrets": [
+        { "name": "EVENT_DB_USERNAME", "valueFrom": "__SECRET_EVENT_SERVICE_ARN__:EVENT_DB_USERNAME::" },
+        { "name": "EVENT_DB_PASSWORD", "valueFrom": "__SECRET_EVENT_SERVICE_ARN__:EVENT_DB_PASSWORD::" },
+        { "name": "AUTH_JWT_SECRET", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "AUTH_JWT_ISSUER", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "EVENT_STORAGE_ACCESS_KEY", "valueFrom": "__SECRET_EVENT_SERVICE_ARN__:EVENT_STORAGE_ACCESS_KEY::" },
+        { "name": "EVENT_STORAGE_SECRET_KEY", "valueFrom": "__SECRET_EVENT_SERVICE_ARN__:EVENT_STORAGE_SECRET_KEY::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8082/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 40
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/event-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

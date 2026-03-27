@@ -1,0 +1,66 @@
+{
+  "family": "eventzen-finance-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__FINANCE_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "finance-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8085,
+          "hostPort": 8085,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "FINANCE_DB_URL", "value": "__FINANCE_DB_URL__" },
+        { "name": "NOTIFICATION_SERVICE_BASE_URL", "value": "__NOTIFICATION_SERVICE_BASE_URL__" },
+        { "name": "FINANCE_CORS_ALLOWED_ORIGINS", "value": "__FRONTEND_ORIGIN__" },
+        { "name": "TICKETING_SERVICE_BASE_URL", "value": "__TICKETING_SERVICE_BASE_URL__" },
+        { "name": "FINANCE_STORAGE_ENABLED", "value": "__FINANCE_STORAGE_ENABLED__" },
+        { "name": "FINANCE_STORAGE_ENDPOINT", "value": "__FINANCE_STORAGE_ENDPOINT__" },
+        { "name": "FINANCE_STORAGE_BUCKET", "value": "__FINANCE_STORAGE_BUCKET__" },
+        { "name": "FINANCE_STORAGE_PUBLIC_BASE_URL", "value": "__FINANCE_STORAGE_PUBLIC_BASE_URL__" },
+        { "name": "FINANCE_STORAGE_INVOICES_PREFIX", "value": "__FINANCE_STORAGE_INVOICES_PREFIX__" },
+        { "name": "FINANCE_RAZORPAY_ENABLED", "value": "__FINANCE_RAZORPAY_ENABLED__" },
+        { "name": "FINANCE_RAZORPAY_CHECKOUT_NAME", "value": "EventZen" },
+        { "name": "FINANCE_RAZORPAY_CHECKOUT_DESCRIPTION", "value": "Event registration payment" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" },
+        { "name": "MANAGEMENT_TRACING_SAMPLING_PROBABILITY", "value": "1.0" }
+      ],
+      "secrets": [
+        { "name": "FINANCE_DB_USERNAME", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_DB_USERNAME::" },
+        { "name": "FINANCE_DB_PASSWORD", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_DB_PASSWORD::" },
+        { "name": "AUTH_JWT_SECRET", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "AUTH_JWT_ISSUER", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "NOTIFICATION_INTERNAL_SERVICE_KEY", "valueFrom": "__SECRET_SHARED_ARN__:NOTIFICATION_INTERNAL_SERVICE_KEY::" },
+        { "name": "TICKETING_INTERNAL_SERVICE_KEY", "valueFrom": "__SECRET_SHARED_ARN__:TICKETING_INTERNAL_SERVICE_KEY::" },
+        { "name": "FINANCE_STORAGE_ACCESS_KEY", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_STORAGE_ACCESS_KEY::" },
+        { "name": "FINANCE_STORAGE_SECRET_KEY", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_STORAGE_SECRET_KEY::" },
+        { "name": "FINANCE_RAZORPAY_KEY_ID", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_RAZORPAY_KEY_ID::" },
+        { "name": "FINANCE_RAZORPAY_KEY_SECRET", "valueFrom": "__SECRET_FINANCE_SERVICE_ARN__:FINANCE_RAZORPAY_KEY_SECRET::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8085/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 40
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/finance-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

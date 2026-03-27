@@ -1,0 +1,478 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_AUTH_SERVICE_URL: ${VITE_AUTH_SERVICE_URL:-/}
+        VITE_EVENT_SERVICE_URL: ${VITE_EVENT_SERVICE_URL:-/}
+        VITE_VENUE_VENDOR_SERVICE_URL: ${VITE_VENUE_VENDOR_SERVICE_URL:-/}
+        VITE_TICKETING_SERVICE_URL: ${VITE_TICKETING_SERVICE_URL:-/}
+        VITE_FINANCE_SERVICE_URL: ${VITE_FINANCE_SERVICE_URL:-/}
+        VITE_NOTIFICATION_SERVICE_URL: ${VITE_NOTIFICATION_SERVICE_URL:-/}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+        VITE_FIREBASE_VAPID_KEY: ${VITE_FIREBASE_VAPID_KEY:-}
+    container_name: eventzen-frontend
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      venue-vendor-service:
+        condition: service_healthy
+      ticketing-service:
+        condition: service_healthy
+      finance-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: eventzen-nginx
+    depends_on:
+      - frontend
+      - auth-service
+      - event-service
+      - venue-vendor-service
+      - ticketing-service
+      - finance-service
+      - notification-service
+    ports:
+      - "80:80"
+    volumes:
+      - ${APP_ROOT:-/opt/eventzen}/nginx/nginx.generated.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: eventzen-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3407}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    container_name: eventzen-mongodb
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "mongodb://127.0.0.1:27017/admin", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: eventzen-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: eventzen-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$$MINIO_BUCKET"
+        mc anonymous set download "local/$$MINIO_BUCKET"
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: eventzen-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: eventzen-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "127.0.0.1:2181:2181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc -w 2 127.0.0.1 2181 | grep 'Mode:'"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: eventzen-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "127.0.0.1:9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "cub kafka-ready -b kafka:29092 1 20"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: eventzen-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: eventzen
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    ports:
+      - "127.0.0.1:8091:8080"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: eventzen-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: eventzen-loki
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:${LOKI_HOST_PORT:-3301}:3100"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: eventzen-promtail
+    command: ["-config.file=/etc/promtail/config.yml"]
+    depends_on:
+      - loki
+    volumes:
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: eventzen-tempo
+    user: "0:0"
+    command: ["-config.file=/etc/tempo/config.yml"]
+    volumes:
+      - ./monitoring/tempo/config.yml:/etc/tempo/config.yml:ro
+      - tempo_data:/tmp/tempo
+    ports:
+      - "127.0.0.1:${TEMPO_HOST_PORT:-3300}:3200"
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: eventzen-otel-collector
+    command: ["--config=/etc/otel-collector/config.yml"]
+    depends_on:
+      - tempo
+    volumes:
+      - ./monitoring/otel-collector/config.yml:/etc/otel-collector/config.yml:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:8888:8888"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: eventzen-grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-3408}:3000"
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./backend/services/auth-service
+    env_file:
+      - ./.env.example
+    environment:
+      AUTH_DB_URL: jdbc:mysql://mysql:3306/eventzen_users?createDatabaseIfNotExist=true&serverTimezone=UTC
+      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
+      AUTH_APP_BASE_URL: ${AUTH_APP_BASE_URL}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+    depends_on:
+      mysql:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  event-service:
+    build:
+      context: ./backend/services/event-service
+    env_file:
+      - ./.env.example
+    environment:
+      EVENT_DB_URL: jdbc:mysql://mysql:3306/eventzen_events?createDatabaseIfNotExist=true&serverTimezone=UTC
+      VENUE_VENDOR_SERVICE_URL: http://venue-vendor-service:8083
+      EVENT_CORS_ALLOWED_ORIGINS: ${FRONTEND_ORIGIN}
+      EVENT_STORAGE_ENABLED: ${EVENT_STORAGE_ENABLED}
+      EVENT_STORAGE_ENDPOINT: http://minio:9000
+      EVENT_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      EVENT_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      EVENT_STORAGE_BUCKET: ${MINIO_BUCKET}
+      EVENT_STORAGE_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL}
+      EVENT_STORAGE_EVENT_BANNERS_PREFIX: ${MINIO_EVENT_BANNERS_PREFIX}
+      EVENT_STORAGE_SPEAKER_PHOTOS_PREFIX: ${MINIO_SPEAKER_PHOTOS_PREFIX}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+    depends_on:
+      mysql:
+        condition: service_healthy
+      venue-vendor-service:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  venue-vendor-service:
+    build:
+      context: ./backend/services/venue-vendor-service
+    env_file:
+      - ./.env.example
+    environment:
+      MONGO_URI: ${VENUE_VENDOR_MONGO_URI}
+      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
+      CORS_ORIGIN: ${FRONTEND_ORIGIN}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8083/api/v1/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  ticketing-service:
+    build:
+      context: ./backend/services/ticketing-service
+    env_file:
+      - ./.env.example
+    environment:
+      Urls: http://0.0.0.0:8084
+      Mongo__ConnectionString: ${TICKETING_MONGO_CONNECTION_STRING}
+      Mongo__DatabaseName: ${TICKETING_MONGO_DATABASE}
+      Jwt__Secret: ${AUTH_JWT_SECRET}
+      Jwt__Issuer: ${AUTH_JWT_ISSUER}
+      EventService__BaseUrl: http://event-service:8082
+      NotificationService__BaseUrl: http://notification-service:8086
+      NotificationService__InternalServiceKey: ${NOTIFICATION_INTERNAL_SERVICE_KEY}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN}
+      Storage__Enabled: ${EVENT_STORAGE_ENABLED}
+      Storage__Endpoint: http://minio:9000
+      Storage__AccessKey: ${MINIO_ROOT_USER}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Storage__Bucket: ${MINIO_BUCKET}
+      Storage__PublicBaseUrl: ${MINIO_PUBLIC_BASE_URL}
+      Storage__TicketPassesPrefix: ${MINIO_TICKET_PASSES_PREFIX}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8084/api/v1/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  finance-service:
+    build:
+      context: ./backend/services/finance-service
+    env_file:
+      - ./.env.example
+    environment:
+      FINANCE_DB_URL: jdbc:mysql://mysql:3306/eventzen_finance?createDatabaseIfNotExist=true&serverTimezone=UTC
+      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
+      FINANCE_CORS_ALLOWED_ORIGINS: ${FRONTEND_ORIGIN}
+      TICKETING_SERVICE_BASE_URL: http://ticketing-service:8084
+      FINANCE_STORAGE_ENABLED: ${EVENT_STORAGE_ENABLED}
+      FINANCE_STORAGE_ENDPOINT: http://minio:9000
+      FINANCE_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      FINANCE_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      FINANCE_STORAGE_BUCKET: ${MINIO_BUCKET}
+      FINANCE_STORAGE_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL}
+      FINANCE_STORAGE_INVOICES_PREFIX: ${MINIO_INVOICES_PREFIX}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+    depends_on:
+      mysql:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8085/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./backend/services/notification-service
+    env_file:
+      - ./.env.example
+    environment:
+      MONGO_URI: ${NOTIFICATION_MONGO_URI}
+      CORS_ORIGIN: ${FRONTEND_ORIGIN}
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:29092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8086/api/v1/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  mongodb_data:
+  redis_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:

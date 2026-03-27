@@ -1,0 +1,10 @@
+@import 'tailwindcss' source(none);
+@source '../main.jsx';
+@source '../app/**/*.{js,jsx}';
+
+@import 'tw-animate-css';
+
+@theme {
+  --font-sans: "Aptos", "Segoe UI", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Aptos", "Segoe UI", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+}

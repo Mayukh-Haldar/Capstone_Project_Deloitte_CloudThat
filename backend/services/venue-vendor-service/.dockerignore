@@ -1,0 +1,7 @@
+node_modules
+.env
+.env.local
+coverage
+postman
+tests
+TEST_CASES.md

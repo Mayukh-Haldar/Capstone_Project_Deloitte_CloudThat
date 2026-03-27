@@ -1,0 +1,71 @@
+{
+  "family": "eventzen-auth-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__AUTH_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "auth-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8081,
+          "hostPort": 8081,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "AUTH_DB_URL", "value": "__AUTH_DB_URL__" },
+        { "name": "NOTIFICATION_SERVICE_BASE_URL", "value": "__NOTIFICATION_SERVICE_BASE_URL__" },
+        { "name": "AUTH_APP_BASE_URL", "value": "__AUTH_APP_BASE_URL__" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" },
+        { "name": "MANAGEMENT_TRACING_SAMPLING_PROBABILITY", "value": "1.0" },
+        { "name": "AUTH_BOOTSTRAP_ADMIN_FIRST_NAME", "value": "System" },
+        { "name": "AUTH_BOOTSTRAP_ADMIN_LAST_NAME", "value": "Administrator" },
+        { "name": "AUTH_PASSWORD_RESET_MINUTES", "value": "30" },
+        { "name": "AUTH_EMAIL_VERIFICATION_HOURS", "value": "24" },
+        { "name": "AUTH_REQUIRE_VERIFIED_EMAIL_FOR_LOGIN", "value": "false" },
+        { "name": "AUTH_EXPOSE_DEBUG_TOKENS", "value": "false" },
+        { "name": "AUTH_ALLOW_DEBUG_GOOGLE_TOKENS", "value": "false" }
+      ],
+      "secrets": [
+        { "name": "AUTH_DB_USERNAME", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_DB_USERNAME::" },
+        { "name": "AUTH_DB_PASSWORD", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_DB_PASSWORD::" },
+        { "name": "AUTH_JWT_SECRET", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "AUTH_JWT_ISSUER", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "AUTH_CRYPTO_SECRET", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_CRYPTO_SECRET::" },
+        { "name": "AUTH_BOOTSTRAP_ADMIN_EMAIL", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_BOOTSTRAP_ADMIN_EMAIL::" },
+        { "name": "AUTH_BOOTSTRAP_ADMIN_PASSWORD", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_BOOTSTRAP_ADMIN_PASSWORD::" },
+        { "name": "NOTIFICATION_INTERNAL_SERVICE_KEY", "valueFrom": "__SECRET_SHARED_ARN__:NOTIFICATION_INTERNAL_SERVICE_KEY::" },
+        { "name": "AUTH_SMTP_HOST", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_HOST::" },
+        { "name": "AUTH_SMTP_PORT", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_PORT::" },
+        { "name": "AUTH_SMTP_USERNAME", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_USERNAME::" },
+        { "name": "AUTH_SMTP_PASSWORD", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_PASSWORD::" },
+        { "name": "AUTH_SMTP_AUTH", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_AUTH::" },
+        { "name": "AUTH_SMTP_STARTTLS", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_SMTP_STARTTLS::" },
+        { "name": "AUTH_MAIL_FROM_EMAIL", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_MAIL_FROM_EMAIL::" },
+        { "name": "AUTH_MAIL_FROM_NAME", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_MAIL_FROM_NAME::" },
+        { "name": "AUTH_GOOGLE_CLIENT_ID", "valueFrom": "__SECRET_AUTH_SERVICE_ARN__:AUTH_GOOGLE_CLIENT_ID::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 40
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/auth-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

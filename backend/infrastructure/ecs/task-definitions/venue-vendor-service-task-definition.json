@@ -1,0 +1,51 @@
+{
+  "family": "eventzen-venue-vendor-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__VENUE_VENDOR_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "venue-vendor-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8083,
+          "hostPort": 8083,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "8083" },
+        { "name": "NOTIFICATION_SERVICE_BASE_URL", "value": "__NOTIFICATION_SERVICE_BASE_URL__" },
+        { "name": "CORS_ORIGIN", "value": "__FRONTEND_ORIGIN__" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" },
+        { "name": "ENABLE_REQUEST_LOGS", "value": "true" }
+      ],
+      "secrets": [
+        { "name": "MONGO_URI", "valueFrom": "__SECRET_VENUE_VENDOR_SERVICE_ARN__:MONGO_URI::" },
+        { "name": "AUTH_JWT_SECRET", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "AUTH_JWT_ISSUER", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "NOTIFICATION_INTERNAL_SERVICE_KEY", "valueFrom": "__SECRET_SHARED_ARN__:NOTIFICATION_INTERNAL_SERVICE_KEY::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8083/api/v1/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/venue-vendor-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

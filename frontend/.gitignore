@@ -1,0 +1,19 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Local env
+.env
+.env.local
+.env.production.local
+
+# Logs
+*.log
+
+# Tooling output
+fix_imports_log.txt
+coverage/
+.vite/
+
+# Archived design exports
+archive/legacy-ui-archive/

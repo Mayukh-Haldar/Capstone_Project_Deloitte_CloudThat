@@ -1,0 +1,94 @@
+name: Reusable ECS Service Deploy
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+      docker_context:
+        required: true
+        type: string
+      task_definition_path:
+        required: true
+        type: string
+      ecr_repository:
+        required: true
+        type: string
+      ecs_service:
+        required: true
+        type: string
+      build_args:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      AWS_ACCOUNT_ID:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_ROLE_TO_ASSUME:
+        required: true
+      ECS_CLUSTER:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.service }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      SERVICE_NAME: ${{ inputs.service }}
+      ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+      TASK_DEFINITION_PATH: ${{ inputs.task_definition_path }}
+      ECS_SERVICE: ${{ inputs.ecs_service }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+      IMAGE_URI: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ inputs.ecr_repository }}:${{ github.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          if [ -n "${{ inputs.build_args }}" ]; then
+            docker build \
+              ${{ inputs.build_args }} \
+              --tag "$IMAGE_URI" \
+              "${{ inputs.docker_context }}"
+          else
+            docker build \
+              --tag "$IMAGE_URI" \
+              "${{ inputs.docker_context }}"
+          fi
+
+      - name: Push Docker image
+        run: docker push "$IMAGE_URI"
+
+      - name: Render ECS task definition with image
+        id: render-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.TASK_DEFINITION_PATH }}
+          container-name: ${{ env.SERVICE_NAME }}
+          image: ${{ env.IMAGE_URI }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true

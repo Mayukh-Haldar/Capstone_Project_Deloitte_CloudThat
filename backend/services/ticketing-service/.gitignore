@@ -1,0 +1,14 @@
+bin/
+obj/
+.dotnet/
+build-temp/
+.env
+.env.local
+
+### IDE ###
+.idea/
+.vscode/
+
+### Test output ###
+TestResults/
+*.log

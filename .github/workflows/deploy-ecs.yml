@@ -1,0 +1,138 @@
+name: Deploy To ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Service to deploy
+        required: true
+        type: choice
+        options:
+          - frontend
+          - auth-service
+          - event-service
+          - venue-vendor-service
+          - ticketing-service
+          - finance-service
+          - notification-service
+
+jobs:
+  deploy-frontend:
+    if: inputs.service == 'frontend'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: frontend
+      docker_context: ./frontend
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/frontend-task-definition.json
+      ecr_repository: eventzen/frontend
+      ecs_service: frontend-service
+      build_args: >-
+        --build-arg VITE_AUTH_SERVICE_URL=/
+        --build-arg VITE_EVENT_SERVICE_URL=/
+        --build-arg VITE_VENUE_VENDOR_SERVICE_URL=/
+        --build-arg VITE_TICKETING_SERVICE_URL=/
+        --build-arg VITE_FINANCE_SERVICE_URL=/
+        --build-arg VITE_NOTIFICATION_SERVICE_URL=/
+        --build-arg VITE_GOOGLE_CLIENT_ID=${{ vars.FRONTEND_PUBLIC_GOOGLE_CLIENT_ID }}
+        --build-arg VITE_FIREBASE_API_KEY=${{ vars.FRONTEND_PUBLIC_FIREBASE_API_KEY }}
+        --build-arg VITE_FIREBASE_AUTH_DOMAIN=${{ vars.FRONTEND_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+        --build-arg VITE_FIREBASE_PROJECT_ID=${{ vars.FRONTEND_PUBLIC_FIREBASE_PROJECT_ID }}
+        --build-arg VITE_FIREBASE_STORAGE_BUCKET=${{ vars.FRONTEND_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+        --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID=${{ vars.FRONTEND_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+        --build-arg VITE_FIREBASE_APP_ID=${{ vars.FRONTEND_PUBLIC_FIREBASE_APP_ID }}
+        --build-arg VITE_FIREBASE_VAPID_KEY=${{ vars.FRONTEND_PUBLIC_FIREBASE_VAPID_KEY }}
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-auth:
+    if: inputs.service == 'auth-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: auth-service
+      docker_context: ./backend/services/auth-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/auth-service-task-definition.json
+      ecr_repository: eventzen/auth-service
+      ecs_service: auth-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-event:
+    if: inputs.service == 'event-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: event-service
+      docker_context: ./backend/services/event-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/event-service-task-definition.json
+      ecr_repository: eventzen/event-service
+      ecs_service: event-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-venue-vendor:
+    if: inputs.service == 'venue-vendor-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: venue-vendor-service
+      docker_context: ./backend/services/venue-vendor-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/venue-vendor-service-task-definition.json
+      ecr_repository: eventzen/venue-vendor-service
+      ecs_service: venue-vendor-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-ticketing:
+    if: inputs.service == 'ticketing-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: ticketing-service
+      docker_context: ./backend/services/ticketing-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/ticketing-service-task-definition.json
+      ecr_repository: eventzen/ticketing-service
+      ecs_service: ticketing-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-finance:
+    if: inputs.service == 'finance-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: finance-service
+      docker_context: ./backend/services/finance-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/finance-service-task-definition.json
+      ecr_repository: eventzen/finance-service
+      ecs_service: finance-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+
+  deploy-notification:
+    if: inputs.service == 'notification-service'
+    uses: ./.github/workflows/deploy-ecs-service.yml
+    with:
+      service: notification-service
+      docker_context: ./backend/services/notification-service
+      task_definition_path: ./backend/infrastructure/ecs/task-definitions/notification-service-task-definition.json
+      ecr_repository: eventzen/notification-service
+      ecs_service: notification-service
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}

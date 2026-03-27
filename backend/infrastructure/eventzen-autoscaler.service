@@ -1,0 +1,15 @@
+[Unit]
+Description=EventZen Docker autoscaler
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=15
+Environment=APP_ROOT=/opt/eventzen
+WorkingDirectory=/opt/eventzen
+ExecStart=/opt/eventzen/bin/eventzen-autoscaler.sh
+
+[Install]
+WantedBy=multi-user.target

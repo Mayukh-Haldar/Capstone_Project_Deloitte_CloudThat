@@ -1,0 +1,59 @@
+{
+  "family": "eventzen-ticketing-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__TICKETING_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "ticketing-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8084,
+          "hostPort": 8084,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "Urls", "value": "http://0.0.0.0:8084" },
+        { "name": "EventService__BaseUrl", "value": "__EVENT_SERVICE_BASE_URL__" },
+        { "name": "NotificationService__BaseUrl", "value": "__NOTIFICATION_SERVICE_BASE_URL__" },
+        { "name": "Cors__AllowedOrigins__0", "value": "__FRONTEND_ORIGIN__" },
+        { "name": "Storage__Enabled", "value": "__TICKETING_STORAGE_ENABLED__" },
+        { "name": "Storage__Endpoint", "value": "__TICKETING_STORAGE_ENDPOINT__" },
+        { "name": "Storage__Bucket", "value": "__TICKETING_STORAGE_BUCKET__" },
+        { "name": "Storage__PublicBaseUrl", "value": "__TICKETING_STORAGE_PUBLIC_BASE_URL__" },
+        { "name": "Storage__TicketPassesPrefix", "value": "__TICKETING_STORAGE_TICKET_PASSES_PREFIX__" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" }
+      ],
+      "secrets": [
+        { "name": "Mongo__ConnectionString", "valueFrom": "__SECRET_TICKETING_SERVICE_ARN__:Mongo__ConnectionString::" },
+        { "name": "Mongo__DatabaseName", "valueFrom": "__SECRET_TICKETING_SERVICE_ARN__:Mongo__DatabaseName::" },
+        { "name": "Jwt__Secret", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "Jwt__Issuer", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "NotificationService__InternalServiceKey", "valueFrom": "__SECRET_SHARED_ARN__:NOTIFICATION_INTERNAL_SERVICE_KEY::" },
+        { "name": "Storage__AccessKey", "valueFrom": "__SECRET_TICKETING_SERVICE_ARN__:Storage__AccessKey::" },
+        { "name": "Storage__SecretKey", "valueFrom": "__SECRET_TICKETING_SERVICE_ARN__:Storage__SecretKey::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8084/api/v1/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 40
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/ticketing-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

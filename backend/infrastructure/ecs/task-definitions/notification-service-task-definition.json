@@ -1,0 +1,71 @@
+{
+  "family": "eventzen-notification-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["EC2"],
+  "executionRoleArn": "__ECS_TASK_EXECUTION_ROLE_ARN__",
+  "taskRoleArn": "__NOTIFICATION_SERVICE_TASK_ROLE_ARN__",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "notification-service",
+      "image": "__IMAGE_URI__",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8086,
+          "hostPort": 8086,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PORT", "value": "8086" },
+        { "name": "CORS_ORIGIN", "value": "__FRONTEND_ORIGIN__" },
+        { "name": "REDIS_URL", "value": "__REDIS_URL__" },
+        { "name": "KAFKA_BROKERS", "value": "__KAFKA_BROKERS__" },
+        { "name": "KAFKA_CLIENT_ID", "value": "eventzen-notification-service" },
+        { "name": "KAFKA_CONSUMER_GROUP", "value": "eventzen-notification-service" },
+        { "name": "KAFKA_TOPICS", "value": "__KAFKA_TOPICS__" },
+        { "name": "ENABLE_KAFKA", "value": "__ENABLE_KAFKA__" },
+        { "name": "ENABLE_BULLMQ", "value": "false" },
+        { "name": "ENABLE_SOCKET_IO", "value": "true" },
+        { "name": "SEED_DEFAULT_TEMPLATES", "value": "true" },
+        { "name": "DEFAULT_NOTIFICATION_LOCALE", "value": "en" },
+        { "name": "NOTIFICATION_RETENTION_DAYS", "value": "90" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "__OTEL_EXPORTER_OTLP_ENDPOINT__" }
+      ],
+      "secrets": [
+        { "name": "MONGO_URI", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:MONGO_URI::" },
+        { "name": "AUTH_JWT_SECRET", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_SECRET::" },
+        { "name": "AUTH_JWT_ISSUER", "valueFrom": "__SECRET_SHARED_ARN__:AUTH_JWT_ISSUER::" },
+        { "name": "NOTIFICATION_INTERNAL_SERVICE_KEY", "valueFrom": "__SECRET_SHARED_ARN__:NOTIFICATION_INTERNAL_SERVICE_KEY::" },
+        { "name": "NOTIFICATION_SMTP_HOST", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_HOST::" },
+        { "name": "NOTIFICATION_SMTP_PORT", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_PORT::" },
+        { "name": "NOTIFICATION_SMTP_USERNAME", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_USERNAME::" },
+        { "name": "NOTIFICATION_SMTP_PASSWORD", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_PASSWORD::" },
+        { "name": "NOTIFICATION_SMTP_AUTH", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_AUTH::" },
+        { "name": "NOTIFICATION_SMTP_STARTTLS", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_SMTP_STARTTLS::" },
+        { "name": "NOTIFICATION_MAIL_FROM_EMAIL", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_MAIL_FROM_EMAIL::" },
+        { "name": "NOTIFICATION_MAIL_FROM_NAME", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_MAIL_FROM_NAME::" },
+        { "name": "NOTIFICATION_FIREBASE_PROJECT_ID", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_FIREBASE_PROJECT_ID::" },
+        { "name": "NOTIFICATION_FIREBASE_CLIENT_EMAIL", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_FIREBASE_CLIENT_EMAIL::" },
+        { "name": "NOTIFICATION_FIREBASE_PRIVATE_KEY", "valueFrom": "__SECRET_NOTIFICATION_SERVICE_ARN__:NOTIFICATION_FIREBASE_PRIVATE_KEY::" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://127.0.0.1:8086/api/v1/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 5,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventzen/notification-service",
+          "awslogs-region": "__AWS_REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

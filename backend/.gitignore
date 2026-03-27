@@ -1,0 +1,12 @@
+# Local env and secrets
+.env
+.env.local
+.env.prod
+
+# Runtime data
+data/
+logs/
+tmp/
+
+# Local infra overrides
+docker-compose.override.yml
