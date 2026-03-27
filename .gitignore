@@ -24,6 +24,7 @@ Thumbs.db
 vendors.env
 env/
 /nginx/
+.branch-worktrees/
 
 # Logs
 *.log
