@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS eventzen_users;
+CREATE DATABASE IF NOT EXISTS eventzen_events;
+CREATE DATABASE IF NOT EXISTS eventzen_finance;

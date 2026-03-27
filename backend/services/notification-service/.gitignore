@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+coverage/
+
+### IDE ###
+.idea/
+.vscode/
+
+### Test / tooling ###
+postman/newman-results.xml
+*.log

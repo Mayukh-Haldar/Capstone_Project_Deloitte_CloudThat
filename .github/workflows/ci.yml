@@ -1,0 +1,97 @@
+name: EventZen CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  notification-service-tests:
+    name: Notification Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/notification-service
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/services/notification-service/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: node --test tests/unit/**/*.test.js
+
+      - name: Run app smoke tests
+        run: node --experimental-test-isolation=none --test tests/app.test.js
+
+  venue-vendor-service-tests:
+    name: Venue Vendor Service Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/venue-vendor-service
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/services/venue-vendor-service/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  java-service-tests:
+    name: Java Service Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - event-service
+          - finance-service
+    defaults:
+      run:
+        working-directory: backend/services/${{ matrix.service }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run Maven tests
+        run: mvn -B test
+
+  ticketing-tests:
+    name: Ticketing Service Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run .NET tests
+        run: dotnet test backend/services/ticketing-service/tests/EventZen.Ticketing.Tests/EventZen.Ticketing.Tests.csproj --configuration Release

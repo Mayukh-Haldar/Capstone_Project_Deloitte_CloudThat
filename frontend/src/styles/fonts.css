@@ -1,0 +1,27 @@
+/* Global typography baseline */
+:root {
+  --eventzen-font-family: "Aptos", "Segoe UI", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
+  --eventzen-display-font: "Aptos", "Segoe UI", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body {
+  font-family: var(--eventzen-font-family);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.eventzen-page-title {
+  font-family: var(--eventzen-font-family);
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+@media (min-width: 640px) {
+  .eventzen-page-title {
+    font-size: 2.875rem;
+  }
+}

@@ -1,0 +1,365 @@
+﻿@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 14px;
+  /* 60-30-10 Light Theme:
+     60% — #eef3fc (soft brand-blue-tinted canvas, all page backgrounds)
+     30% — #ffffff (pure white elevated surfaces: cards, panels, sidebar)
+     10% — #1132d4 (electric brand blue: CTAs, active states, links) */
+  --background: #eef3fc;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: #ffffff;
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: #dde8f8;
+  --secondary-foreground: #030213;
+  --muted: #dde8f8;
+  --muted-foreground: #717182;
+  --accent: #e5eefb;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(17, 50, 212, 0.09);
+  --input: transparent;
+  --input-background: #f0f5fd;
+  --switch-background: #c2d2ef;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --reports-accent: #1132d4;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef3fc;
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: #d0ddf2;
+  --sidebar-ring: oklch(0.708 0 0);
+  --cursor-default: url("/cursor-light.svg") 6 3, default;
+  --cursor-pointer: url("/cursor-light.svg") 6 3, pointer;
+  --cursor-aura-border: rgba(64, 235, 255, 0.92);
+  --cursor-aura-fill: rgba(24, 146, 255, 0.16);
+  --cursor-aura-stroke: rgba(178, 248, 255, 0.28);
+  --cursor-aura-glow: rgba(0, 153, 255, 0.45);
+}
+
+.dark {
+  /* 60-30-10 Dark Theme:
+     60% - #080c1e (deepest midnight navy: the canvas, all page backgrounds)
+     30% - #0f1b38 (medium navy: elevated surfaces - cards, panels, sidebar)
+     10% - #4f7cff (electric blue: CTAs, active states, primary actions) */
+  --background: #080c1e;
+  --foreground: #e8ecf4;
+  --card: #0f1b38;
+  --card-foreground: #e8ecf4;
+  --popover: #111e3d;
+  --popover-foreground: #e8ecf4;
+
+  /* Primary is still crisp white so buttons/labels remain readable */
+  --primary: #e8ecf4;
+  --primary-foreground: #080c1e;
+
+  /* 30%-family secondary / muted surfaces */
+  --secondary: #132040;
+  --secondary-foreground: #c8d0e8;
+  --muted: #132040;
+  --muted-foreground: #8899bb;
+
+  /* Accent surface - deepest 30%-family layer for hover / active states */
+  --accent: #192848;
+  --accent-foreground: #c8d0e8;
+
+  /* Destructive keeps its red */
+  --destructive: #c0283e;
+  --destructive-foreground: #ffd0d8;
+
+  /* Borders: very subtle blue-tinted dividers */
+  --border: rgba(100, 140, 230, 0.12);
+  --input: #132040;
+  --input-background: #0f1b38;
+  --switch-background: #1e3060;
+  --ring: rgba(100, 140, 230, 0.4);
+
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+
+  /* Charts â€” keep the blue family dominant, add warm accents */
+  --chart-1: #4f7cff;
+  --chart-2: #36c8a8;
+  --chart-3: #f5c542;
+  --chart-4: #a855f7;
+  --chart-5: #f97316;
+  --reports-accent: #5eead4;
+
+  /* Sidebar slightly lighter than the page background */
+  --sidebar: #0f1b38;
+  --sidebar-foreground: #e8ecf4;
+  --sidebar-primary: #4f7cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #132040;
+  --sidebar-accent-foreground: #c8d0e8;
+  --sidebar-border: rgba(100, 140, 230, 0.12);
+  --sidebar-ring: rgba(100, 140, 230, 0.4);
+  --cursor-default: url("/cursor-dark.svg") 6 3, default;
+  --cursor-pointer: url("/cursor-dark.svg") 6 3, pointer;
+  --cursor-aura-border: rgba(64, 235, 255, 0.92);
+  --cursor-aura-fill: rgba(24, 146, 255, 0.18);
+  --cursor-aura-stroke: rgba(178, 248, 255, 0.28);
+  --cursor-aura-glow: rgba(0, 153, 255, 0.5);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  body {
+    cursor: var(--cursor-default);
+  }
+
+  a,
+  button,
+  [role="button"],
+  summary,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="range"],
+  input[type="submit"],
+  input[type="button"],
+  select {
+    cursor: var(--cursor-pointer);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  form label > span:first-child {
+    display: block;
+    line-height: 1.3;
+  }
+
+  .required-mark {
+    margin-left: 0.2rem;
+    color: #f87171;
+    font-weight: 700;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2.9rem;
+    color: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23475669' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    background-size: 1rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  }
+
+  select option,
+  select optgroup {
+    color: var(--foreground);
+    background-color: var(--popover);
+  }
+
+  select:focus {
+    border-color: #7aa3ff;
+    box-shadow: 0 0 0 3px rgba(122, 163, 255, 0.18);
+  }
+
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  /* Dark mode adjustments for imported UI components */
+  .dark [data-name] {
+    /* Adjust hardcoded white backgrounds to use theme colors */
+    &[style*="background"] {
+      filter: brightness(0.9);
+    }
+  }
+
+  /* Ensure imported components respect theme */
+  .dark svg [fill="#FFFFFF"],
+  .dark svg [fill="white"] {
+    fill: var(--foreground);
+  }
+
+  .dark svg [fill="#000000"],
+  .dark svg [fill="black"] {
+    fill: var(--background);
+  }
+
+  .dark select {
+    color: var(--foreground);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23c8d0e8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+}
+
+/* =============================================================
+   GLOBAL DARK MODE: remap #1132d4 accent to lighter #7aa3ff
+   This covers all pages AND imported screen modules so we
+   don't need to touch hundreds of individual class strings.
+   ============================================================= */
+
+/* Text that is EXACTLY #1132d4 */
+.dark [class*="text-[#1132d4]"] {
+  color: #7aa3ff !important;
+}
+
+/* Border that is EXACTLY #1132d4 */
+.dark [class*="border-[#1132d4]"] {
+  border-color: #7aa3ff !important;
+}
+
+/* Outline rings / focus rings */
+.dark [class*="ring-[#1132d4]"] {
+  --tw-ring-color: #7aa3ff !important;
+}
+
+/* Low-opacity tint backgrounds (#1132d4]/10, /15, /20) â€” used for
+   active-state pill backgrounds. Keep the tint but shift hue. */
+.dark [class*="bg-[#1132d4]/"] {
+  background-color: color-mix(in srgb, #7aa3ff var(--bg-opacity, 15%), transparent) !important;
+}
+
+/* Solid filled backgrounds â€” these are buttons/badges that already
+   show white text, so we only slightly brighten them in dark mode
+   so they pop against the navy rather than blending in. */
+.dark [class*="bg-[#1132d4]"]:not([class*="bg-[#1132d4]/"]) {
+  background-color: #2244e8 !important;
+}
+
+/* Hover variant of the filled button (#0f2dc0 is the darker hover shade) */
+.dark [class*="hover:bg-[#0f2dc0]"]:hover,
+.dark [class*="hover:bg-[#1132d4]"]:hover {
+  background-color: #3355f5 !important;
+}
+
+/* #0b1b4e â€” used as a dark navy card button; stays readable in dark mode as-is,
+   but we override it to the standard brand blue so it looks consistent */
+.dark [class*="bg-[#0b1b4e]"] {
+  background-color: #2244e8 !important;
+}
+
+/* Testimonial Section: soften the strong electric blue into a calmer blend */
+[data-name="Testimonial Section"] {
+  background: linear-gradient(145deg, #e6edf7 0%, #bfd3e6 48%, #8fb2c9 100%) !important;
+}

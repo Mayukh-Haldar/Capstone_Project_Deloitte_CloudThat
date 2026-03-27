@@ -1,0 +1,10 @@
+# Common backend service artifacts
+*/.env
+*/.env.local
+*/node_modules/
+*/target/
+*/bin/
+*/obj/
+*/coverage/
+*/postman/
+*/newman-results.xml
