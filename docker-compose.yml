@@ -47,7 +47,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ${APP_ROOT:-/opt/eventzen}/nginx/nginx.generated.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
 
   mysql:
@@ -272,7 +272,7 @@ services:
     build:
       context: ./backend/services/auth-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       AUTH_DB_URL: jdbc:mysql://mysql:3306/eventzen_users?createDatabaseIfNotExist=true&serverTimezone=UTC
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
@@ -298,7 +298,7 @@ services:
     build:
       context: ./backend/services/event-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       EVENT_DB_URL: jdbc:mysql://mysql:3306/eventzen_events?createDatabaseIfNotExist=true&serverTimezone=UTC
       VENUE_VENDOR_SERVICE_URL: http://venue-vendor-service:8083
@@ -336,7 +336,7 @@ services:
     build:
       context: ./backend/services/venue-vendor-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       MONGO_URI: ${VENUE_VENDOR_MONGO_URI}
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
@@ -361,7 +361,7 @@ services:
     build:
       context: ./backend/services/ticketing-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       Urls: http://0.0.0.0:8084
       Mongo__ConnectionString: ${TICKETING_MONGO_CONNECTION_STRING}
@@ -405,7 +405,7 @@ services:
     build:
       context: ./backend/services/finance-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       FINANCE_DB_URL: jdbc:mysql://mysql:3306/eventzen_finance?createDatabaseIfNotExist=true&serverTimezone=UTC
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
@@ -443,7 +443,7 @@ services:
     build:
       context: ./backend/services/notification-service
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       MONGO_URI: ${NOTIFICATION_MONGO_URI}
       CORS_ORIGIN: ${FRONTEND_ORIGIN}
