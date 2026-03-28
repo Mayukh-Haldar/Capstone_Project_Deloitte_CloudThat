@@ -1,0 +1,118 @@
+{
+  "title": "Creator Economy Live 2026",
+  "eventType": "Festival",
+  "categoryId": "50000000-0000-0000-0000-000000000003",
+  "startTime": "2026-08-22T11:00",
+  "endTime": "2026-08-22T20:00",
+  "expectedAttendees": 600,
+  "capacity": 750,
+  "estimatedBudget": 2250000,
+  "tags": [
+    "creator",
+    "media",
+    "brand",
+    "community",
+    "live"
+  ],
+  "description": "A one-day creator economy festival blending live sessions, brand showcases, creator meetups, and hands-on labs for emerging digital brands and content entrepreneurs.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80",
+  "venueBooking": {
+    "venueId": "90000000-0000-0000-0000-000000000002",
+    "venueName": "Harbor Expo Pavilion",
+    "venueCity": "Mumbai"
+  },
+  "agendaItems": [
+    {
+      "agendaTitle": "Doors Open and Expo Walkthrough",
+      "type": "Expo",
+      "startTime": "2026-08-22T11:00",
+      "endTime": "2026-08-22T12:00",
+      "description": "Attendees explore sponsor activations, creator booths, and collaboration zones."
+    },
+    {
+      "agendaTitle": "State of the Creator Economy",
+      "type": "Keynote",
+      "startTime": "2026-08-22T12:00",
+      "endTime": "2026-08-22T12:45",
+      "description": "An opening keynote on monetization trends, audience growth, and platform strategy."
+    },
+    {
+      "agendaTitle": "Brand Partnerships Masterclass",
+      "type": "Masterclass",
+      "startTime": "2026-08-22T14:00",
+      "endTime": "2026-08-22T15:00",
+      "description": "How creators and brand teams structure campaigns, retain authenticity, and measure results."
+    },
+    {
+      "agendaTitle": "Creator Meet and Greet",
+      "type": "Networking",
+      "startTime": "2026-08-22T17:30",
+      "endTime": "2026-08-22T18:30",
+      "description": "Community meetup and networking with invited creators and platform partners."
+    }
+  ],
+  "sessions": [
+    {
+      "sessionTitle": "State of the Creator Economy",
+      "speakerName": "Sara Kulkarni",
+      "speakerRole": "Founder",
+      "speakerCompany": "StudioNova",
+      "room": "Ocean Hall",
+      "sessionType": "Keynote",
+      "startTime": "2026-08-22T12:00",
+      "endTime": "2026-08-22T12:45",
+      "capacity": 600,
+      "description": "A keynote on creator revenue streams, brand ecosystems, and platform diversification."
+    },
+    {
+      "sessionTitle": "Brand Partnerships Masterclass",
+      "speakerName": "Dev Arora",
+      "speakerRole": "Partnerships Lead",
+      "speakerCompany": "BrandBridge",
+      "room": "Pier Gallery",
+      "sessionType": "Masterclass",
+      "startTime": "2026-08-22T14:00",
+      "endTime": "2026-08-22T15:00",
+      "capacity": 220,
+      "description": "A session on pricing campaigns, structuring deliverables, and proving ROI."
+    },
+    {
+      "sessionTitle": "Community Growth Clinic",
+      "speakerName": "Ira Thomas",
+      "speakerRole": "Audience Strategy Consultant",
+      "speakerCompany": "FanLoop",
+      "room": "Pier Gallery",
+      "sessionType": "Clinic",
+      "startTime": "2026-08-22T15:30",
+      "endTime": "2026-08-22T16:15",
+      "capacity": 220,
+      "description": "Hands-on audience growth coaching for early-stage creators and brand communities."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "ticketName": "Festival Pass",
+      "tierCode": "GENERAL",
+      "price": 2499,
+      "totalQuantity": 450,
+      "maxPerOrder": 6,
+      "description": "Full-day access to the keynote, expo floor, and community sessions."
+    },
+    {
+      "ticketName": "Creator Pro Pass",
+      "tierCode": "VIP",
+      "price": 5999,
+      "totalQuantity": 120,
+      "maxPerOrder": 3,
+      "description": "Priority access, creator lounge entry, and reserved meet-and-greet slots."
+    },
+    {
+      "ticketName": "Brand Partner Badge",
+      "tierCode": "SPONSOR",
+      "price": 0,
+      "totalQuantity": 30,
+      "maxPerOrder": 2,
+      "description": "Reserved allocation for invited brand teams, media partners, and collaborators."
+    }
+  ]
+}

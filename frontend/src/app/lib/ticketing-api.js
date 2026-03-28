@@ -1,5 +1,5 @@
 import { ticketingApiPath } from "./api-config";
-import { request } from "./http-client";
+import { request, requestBlob } from "./http-client";
 export const ticketingApi = {
     async listTicketTypes(eventId) {
         const response = await request({
@@ -15,6 +15,22 @@ export const ticketingApi = {
             auth: true
         });
         return response.data;
+    },
+    async updateTicketType(eventId, ticketTypeId, payload) {
+        const response = await request({
+            url: ticketingApiPath(`/events/${eventId}/ticket-types/${encodeURIComponent(ticketTypeId)}`),
+            method: "PUT",
+            body: payload,
+            auth: true
+        });
+        return response.data;
+    },
+    async deleteTicketType(eventId, ticketTypeId) {
+        await request({
+            url: ticketingApiPath(`/events/${eventId}/ticket-types/${encodeURIComponent(ticketTypeId)}`),
+            method: "DELETE",
+            auth: true
+        });
     },
     async createRegistration(payload, idempotencyKey) {
         const response = await request({
@@ -32,6 +48,12 @@ export const ticketingApi = {
             auth: true
         });
         return (response.data || []);
+    },
+    async downloadRegistrationTicketPass(registrationId) {
+        return requestBlob({
+            url: ticketingApiPath(`/registrations/${registrationId}/ticket-pass`),
+            auth: true
+        });
     },
     async cancelRegistration(registrationId, reason) {
         const body = reason ? { cancellationReason: reason } : undefined;

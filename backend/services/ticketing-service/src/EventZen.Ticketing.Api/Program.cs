@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EventZen.Ticketing.Api.Hubs;
 using EventZen.Ticketing.Api.Infrastructure;
 using EventZen.Ticketing.Api.Middleware;
 using EventZen.Ticketing.Api.Options;
@@ -41,12 +42,14 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
 });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("eventzen", policy =>
     {
         var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:5173"];
-        policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+        policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
     });
 });
 
@@ -72,6 +75,7 @@ app.UseCors("eventzen");
 app.UseHttpMetrics();
 app.UseMiddleware<JwtAuthenticationMiddleware>();
 app.MapControllers();
+app.MapHub<SeatHub>("/seat-hub");
 app.MapMetrics("/metrics");
 
 app.Run();

@@ -1,9 +1,11 @@
 using EventZen.Ticketing.Api.Common;
 using EventZen.Ticketing.Api.Contracts;
 using EventZen.Ticketing.Api.Domain;
+using EventZen.Ticketing.Api.Hubs;
 using EventZen.Ticketing.Api.Infrastructure;
 using EventZen.Ticketing.Api.Options;
 using EventZen.Ticketing.Api.Security;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
 namespace EventZen.Ticketing.Api.Services;
@@ -17,6 +19,7 @@ public sealed class TicketingService
     private readonly TicketDeliveryAssetService _ticketDeliveryAssetService;
     private readonly TicketPassStorageService _ticketPassStorageService;
     private readonly JwtOptions _jwtOptions;
+    private readonly IHubContext<SeatHub> _seatHub;
 
     public TicketingService(
         ITicketingRepository repository,
@@ -25,7 +28,8 @@ public sealed class TicketingService
         QrCodeService qrCodeService,
         TicketDeliveryAssetService ticketDeliveryAssetService,
         TicketPassStorageService ticketPassStorageService,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        IHubContext<SeatHub> seatHub)
     {
         _repository = repository;
         _eventCatalogClient = eventCatalogClient;
@@ -34,6 +38,7 @@ public sealed class TicketingService
         _ticketDeliveryAssetService = ticketDeliveryAssetService;
         _ticketPassStorageService = ticketPassStorageService;
         _jwtOptions = jwtOptions.Value;
+        _seatHub = seatHub;
     }
 
     public async Task<TicketTypeResponse> CreateTicketTypeAsync(Guid eventId, CreateTicketTypeRequest request, CancellationToken cancellationToken)
@@ -59,6 +64,64 @@ public sealed class TicketingService
 
         await _repository.SaveTicketTypeAsync(ticketType, cancellationToken);
         return Map(ticketType);
+    }
+
+    public async Task<TicketTypeResponse> UpdateTicketTypeAsync(Guid eventId, Guid ticketTypeId, UpdateTicketTypeRequest request, CancellationToken cancellationToken)
+    {
+        if (request.TotalQuantity <= 0)
+        {
+            throw new EventZenException(400, "VALIDATION_ERROR", "TKT-3006", "TotalQuantity must be greater than zero");
+        }
+
+        var ticketType = await _repository.GetTicketTypeAsync(ticketTypeId, cancellationToken)
+                         ?? throw new EventZenException(404, "NOT_FOUND", "TKT-3007", "Ticket type not found");
+
+        if (ticketType.EventId != eventId)
+        {
+            throw new EventZenException(400, "VALIDATION_ERROR", "TKT-3008", "Ticket type does not belong to the requested event");
+        }
+
+        var bookedCount = Math.Max(ticketType.TotalQuantity - ticketType.AvailableQuantity, 0);
+        if (request.TotalQuantity < bookedCount)
+        {
+            throw new EventZenException(409, "BUSINESS_ERROR", "TKT-3024", "Total quantity cannot be less than tickets already booked");
+        }
+
+        ticketType.TicketName = request.TicketName.Trim();
+        ticketType.TierCode = request.TierCode.Trim().ToUpperInvariant();
+        ticketType.Price = request.Price;
+        ticketType.TotalQuantity = request.TotalQuantity;
+        ticketType.AvailableQuantity = request.TotalQuantity - bookedCount;
+        ticketType.MaxPerOrder = Math.Max(1, request.MaxPerOrder);
+        ticketType.Description = request.Description?.Trim();
+        ticketType.SaleStartsAt = request.SaleStartsAt;
+        ticketType.SaleEndsAt = request.SaleEndsAt;
+        ticketType.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _repository.SaveTicketTypeAsync(ticketType, cancellationToken);
+        return Map(ticketType);
+    }
+
+    public async Task DeleteTicketTypeAsync(Guid eventId, Guid ticketTypeId, CancellationToken cancellationToken)
+    {
+        var ticketType = await _repository.GetTicketTypeAsync(ticketTypeId, cancellationToken)
+                         ?? throw new EventZenException(404, "NOT_FOUND", "TKT-3007", "Ticket type not found");
+
+        if (ticketType.EventId != eventId)
+        {
+            throw new EventZenException(400, "VALIDATION_ERROR", "TKT-3008", "Ticket type does not belong to the requested event");
+        }
+
+        var bookedCount = Math.Max(ticketType.TotalQuantity - ticketType.AvailableQuantity, 0);
+        if (bookedCount > 0)
+        {
+            throw new EventZenException(409, "BUSINESS_ERROR", "TKT-3025", "Ticket tiers with booked registrations cannot be deleted");
+        }
+
+        ticketType.IsActive = false;
+        ticketType.AvailableQuantity = 0;
+        ticketType.UpdatedAt = DateTimeOffset.UtcNow;
+        await _repository.SaveTicketTypeAsync(ticketType, cancellationToken);
     }
 
     public async Task<IReadOnlyList<TicketTypeResponse>> ListTicketTypesAsync(Guid eventId, CancellationToken cancellationToken)
@@ -207,6 +270,7 @@ public sealed class TicketingService
                 RegistrationId = registration.Id
             };
             await _repository.SaveSeatBookingAsync(seatBooking, cancellationToken);
+            await BroadcastSeatUpdateAsync(registration.EventId, ticketType.Id, seatRow, seatColumn.Value, "BOOKED", cancellationToken);
         }
 
         if (requiresPayment)
@@ -288,6 +352,23 @@ public sealed class TicketingService
         return await HydrateRegistrationsAsync(registrations, cancellationToken);
     }
 
+    public async Task<(byte[] Content, string FileName)> GenerateTicketPassPdfAsync(Guid registrationId, UserContext user, CancellationToken cancellationToken)
+    {
+        var registration = await _repository.FindRegistrationByIdAsync(registrationId, cancellationToken)
+                           ?? throw new EventZenException(404, "NOT_FOUND", "TKT-3009", "Registration not found");
+
+        if (!user.HasRole("ADMIN") && registration.AttendeeUserId != user.UserId && !string.Equals(registration.AttendeeEmail, user.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new EventZenException(403, "AUTHORIZATION_ERROR", "AUTH-1003", "Insufficient permissions for registration");
+        }
+
+        var ticket = await _repository.FindTicketByIdAsync(registration.TicketId, cancellationToken)
+                     ?? throw new EventZenException(404, "NOT_FOUND", "TKT-3010", "Ticket not found");
+
+        var safeTicketNumber = ticket.TicketNumber.Replace('/', '-');
+        return (_ticketDeliveryAssetService.BuildTicketPassPdf(registration, ticket), $"EventZen-Ticket-{safeTicketNumber}.pdf");
+    }
+
     public async Task CancelRegistrationAsync(Guid registrationId, UserContext user, CancellationToken cancellationToken)
     {
         var registration = await _repository.FindRegistrationByIdAsync(registrationId, cancellationToken)
@@ -322,6 +403,7 @@ public sealed class TicketingService
         if (seatBooking is not null)
         {
             await _repository.DeleteSeatBookingAsync(seatBooking.Id, cancellationToken);
+            await BroadcastSeatUpdateAsync(registration.EventId, registration.TicketTypeId, seatBooking.SeatRow, seatBooking.SeatColumn, "AVAILABLE", CancellationToken.None);
         }
 
         var ticketType = await _repository.GetTicketTypeAsync(registration.TicketTypeId, cancellationToken);
@@ -622,6 +704,8 @@ public sealed class TicketingService
         if (priorUserReservation is not null && !(priorUserReservation.SeatRow == seatRow && priorUserReservation.SeatColumn == seatColumn))
         {
             await _repository.DeleteSeatReservationAsync(priorUserReservation.Id, cancellationToken);
+            // Broadcast that this seat is now free so other clients update immediately
+            await BroadcastSeatUpdateAsync(eventId, ticketTypeId, priorUserReservation.SeatRow, priorUserReservation.SeatColumn, "AVAILABLE", cancellationToken);
         }
 
         // Check if actively reserved by someone else
@@ -637,6 +721,7 @@ public sealed class TicketingService
         {
             existingReservation.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10);
             await _repository.SaveSeatReservationAsync(existingReservation, cancellationToken);
+            await BroadcastSeatUpdateAsync(eventId, ticketTypeId, seatRow, seatColumn, "RESERVED", cancellationToken);
             return new SeatReservationResponse(
                 existingReservation.Id,
                 eventId,
@@ -660,6 +745,7 @@ public sealed class TicketingService
         };
 
         await _repository.SaveSeatReservationAsync(reservation, cancellationToken);
+        await BroadcastSeatUpdateAsync(eventId, ticketTypeId, seatRow, seatColumn, "RESERVED", cancellationToken);
 
         return new SeatReservationResponse(
             reservation.Id,
@@ -685,6 +771,13 @@ public sealed class TicketingService
             throw new EventZenException(403, "FORBIDDEN", "TKT-3023", "You do not own this reservation");
 
         await _repository.DeleteSeatReservationAsync(reservationId, cancellationToken);
+        await BroadcastSeatUpdateAsync(reservation.EventId, ticketTypeId, reservation.SeatRow, reservation.SeatColumn, "AVAILABLE", CancellationToken.None);
+    }
+
+    private Task BroadcastSeatUpdateAsync(Guid eventId, Guid ticketTypeId, string row, int column, string status, CancellationToken cancellationToken)
+    {
+        var group = SeatHub.GroupName(eventId.ToString(), ticketTypeId.ToString());
+        return _seatHub.Clients.Group(group).SendAsync("SeatUpdate", new { row, column, status }, cancellationToken);
     }
 
     private static int ComputeSeatsPerRow(int capacity)
@@ -907,7 +1000,9 @@ public sealed class TicketingService
             Map(ticket),
             registration.SeatRow,
             registration.SeatColumn,
-            seatLabel
+            seatLabel,
+            registration.AttendeeUserId?.ToString(),
+            registration.AttendeeEmail
         );
     }
 

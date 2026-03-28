@@ -35,9 +35,64 @@ const VenueBookingSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    createdByEmail: {
+      type: String
+    },
+    bookingOwnerId: {
+      type: String,
+      index: true
+    },
+    bookingOwnerEmail: {
+      type: String
+    },
     vendorId: {
       type: String,
       index: true
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["PENDING", "PAID"],
+      default: "PENDING",
+      index: true
+    },
+    bookingStatus: {
+      type: String,
+      enum: ["ACTIVE", "CANCELLED"],
+      default: "ACTIVE",
+      index: true
+    },
+    paymentAmount: {
+      type: Number,
+      default: 0
+    },
+    paymentCurrency: {
+      type: String,
+      default: "INR"
+    },
+    paymentId: {
+      type: String,
+      index: true
+    },
+    paymentReference: {
+      type: String
+    },
+    invoiceNumber: {
+      type: String
+    },
+    invoiceUrl: {
+      type: String
+    },
+    paidAt: {
+      type: Date
+    },
+    cancellationReason: {
+      type: String
+    },
+    cancelledAt: {
+      type: Date
+    },
+    cancelledBy: {
+      type: String
     }
   },
   {

@@ -11,6 +11,7 @@ public record PaymentResponse(
         UUID eventId,
         String eventName,
         UUID registrationId,
+        UUID venueBookingId,
         BigDecimal amount,
         String currency,
         PaymentMethod paymentMethod,

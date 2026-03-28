@@ -24,4 +24,19 @@ public sealed class TicketTypesController : ApiControllerBase
         RequireRoles("ADMIN", "ORGANIZER");
         return _ticketingService.CreateTicketTypeAsync(eventId, request, cancellationToken);
     }
+
+    [HttpPut("events/{eventId:guid}/ticket-types/{ticketTypeId:guid}")]
+    public Task<TicketTypeResponse> Update(Guid eventId, Guid ticketTypeId, [FromBody] UpdateTicketTypeRequest request, CancellationToken cancellationToken)
+    {
+        RequireRoles("ADMIN", "ORGANIZER");
+        return _ticketingService.UpdateTicketTypeAsync(eventId, ticketTypeId, request, cancellationToken);
+    }
+
+    [HttpDelete("events/{eventId:guid}/ticket-types/{ticketTypeId:guid}")]
+    public async Task<IActionResult> Delete(Guid eventId, Guid ticketTypeId, CancellationToken cancellationToken)
+    {
+        RequireRoles("ADMIN", "ORGANIZER");
+        await _ticketingService.DeleteTicketTypeAsync(eventId, ticketTypeId, cancellationToken);
+        return NoContent();
+    }
 }

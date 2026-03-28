@@ -3,10 +3,12 @@ using System.Text;
 using EventZen.Ticketing.Api.Common;
 using EventZen.Ticketing.Api.Contracts;
 using EventZen.Ticketing.Api.Domain;
+using EventZen.Ticketing.Api.Hubs;
 using EventZen.Ticketing.Api.Infrastructure;
 using EventZen.Ticketing.Api.Options;
 using EventZen.Ticketing.Api.Security;
 using EventZen.Ticketing.Api.Services;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -159,6 +161,106 @@ public sealed class TicketingServiceTests
         Assert.Equal("TKT-3012", exception.Code);
     }
 
+    [Fact]
+    public async Task UpdateTicketTypeAsync_RecalculatesAvailableInventory()
+    {
+        var repository = new InMemoryTicketingRepository();
+        var eventId = Guid.NewGuid();
+        var ticketType = await repository.SaveTicketTypeAsync(new TicketTypeDocument
+        {
+            EventId = eventId,
+            TicketName = "VIP Pass",
+            TierCode = "VIP",
+            Price = 199,
+            TotalQuantity = 10,
+            AvailableQuantity = 6
+        }, CancellationToken.None);
+
+        var service = CreateService(repository, eventId);
+
+        var updated = await service.UpdateTicketTypeAsync(
+            eventId,
+            ticketType.Id,
+            new UpdateTicketTypeRequest("VIP Plus", "vip", 249, 12, 2, "Updated tier", null, null),
+            CancellationToken.None);
+
+        Assert.Equal("VIP Plus", updated.TicketName);
+        Assert.Equal(12, updated.TotalQuantity);
+        Assert.Equal(8, updated.AvailableQuantity);
+    }
+
+    [Fact]
+    public async Task UpdateTicketTypeAsync_RejectsReducingBelowBookedCount()
+    {
+        var repository = new InMemoryTicketingRepository();
+        var eventId = Guid.NewGuid();
+        var ticketType = await repository.SaveTicketTypeAsync(new TicketTypeDocument
+        {
+            EventId = eventId,
+            TicketName = "General",
+            TierCode = "GENERAL",
+            Price = 29,
+            TotalQuantity = 10,
+            AvailableQuantity = 6
+        }, CancellationToken.None);
+
+        var service = CreateService(repository, eventId);
+
+        var exception = await Assert.ThrowsAsync<EventZenException>(() => service.UpdateTicketTypeAsync(
+            eventId,
+            ticketType.Id,
+            new UpdateTicketTypeRequest("General", "GENERAL", 29, 3, 1, null, null, null),
+            CancellationToken.None));
+
+        Assert.Equal("TKT-3024", exception.Code);
+    }
+
+    [Fact]
+    public async Task DeleteTicketTypeAsync_SoftDeletesUnusedTier()
+    {
+        var repository = new InMemoryTicketingRepository();
+        var eventId = Guid.NewGuid();
+        var ticketType = await repository.SaveTicketTypeAsync(new TicketTypeDocument
+        {
+            EventId = eventId,
+            TicketName = "General",
+            TierCode = "GENERAL",
+            Price = 29,
+            TotalQuantity = 10,
+            AvailableQuantity = 10,
+            IsActive = true
+        }, CancellationToken.None);
+
+        var service = CreateService(repository, eventId);
+        await service.DeleteTicketTypeAsync(eventId, ticketType.Id, CancellationToken.None);
+
+        var deleted = await repository.GetTicketTypeAsync(ticketType.Id, CancellationToken.None);
+        Assert.NotNull(deleted);
+        Assert.False(deleted!.IsActive);
+    }
+
+    [Fact]
+    public async Task DeleteTicketTypeAsync_RejectsBookedTier()
+    {
+        var repository = new InMemoryTicketingRepository();
+        var eventId = Guid.NewGuid();
+        var ticketType = await repository.SaveTicketTypeAsync(new TicketTypeDocument
+        {
+            EventId = eventId,
+            TicketName = "General",
+            TierCode = "GENERAL",
+            Price = 29,
+            TotalQuantity = 10,
+            AvailableQuantity = 9,
+            IsActive = true
+        }, CancellationToken.None);
+
+        var service = CreateService(repository, eventId);
+
+        var exception = await Assert.ThrowsAsync<EventZenException>(() => service.DeleteTicketTypeAsync(eventId, ticketType.Id, CancellationToken.None));
+        Assert.Equal("TKT-3025", exception.Code);
+    }
+
     private static TicketingService CreateService(
         InMemoryTicketingRepository repository,
         Guid eventId,
@@ -191,7 +293,8 @@ public sealed class TicketingServiceTests
             new QrCodeService(),
             new TicketDeliveryAssetService(),
             new TicketPassStorageService(Options.Create(new StorageOptions { Enabled = false }), LoggerFactory.Create(_ => { }).CreateLogger<TicketPassStorageService>()),
-            Options.Create(new JwtOptions { Secret = "change-me-change-me-change-me-change-me-1234567890", Issuer = "eventzen-auth-service" })
+            Options.Create(new JwtOptions { Secret = "change-me-change-me-change-me-change-me-1234567890", Issuer = "eventzen-auth-service" }),
+            new NoOpSeatHubContext()
         );
     }
 
@@ -402,5 +505,50 @@ public sealed class TicketingServiceTests
             _seatBookings.Remove(bookingId);
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class NoOpSeatHubContext : IHubContext<SeatHub>
+    {
+        public IHubClients Clients { get; } = new NoOpHubClients();
+
+        public IGroupManager Groups { get; } = new NoOpGroupManager();
+    }
+
+    private sealed class NoOpHubClients : IHubClients
+    {
+        private static readonly IClientProxy Proxy = new NoOpClientProxy();
+
+        public IClientProxy All => Proxy;
+
+        public IClientProxy AllExcept(IReadOnlyList<string> excludedConnectionIds) => Proxy;
+
+        public IClientProxy Client(string connectionId) => Proxy;
+
+        public IClientProxy Clients(IReadOnlyList<string> connectionIds) => Proxy;
+
+        public IClientProxy Group(string groupName) => Proxy;
+
+        public IClientProxy GroupExcept(string groupName, IReadOnlyList<string> excludedConnectionIds) => Proxy;
+
+        public IClientProxy Groups(IReadOnlyList<string> groupNames) => Proxy;
+
+        public IClientProxy User(string userId) => Proxy;
+
+        public IClientProxy Users(IReadOnlyList<string> userIds) => Proxy;
+    }
+
+    private sealed class NoOpClientProxy : IClientProxy
+    {
+        public Task SendCoreAsync(string method, object?[] args, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    private sealed class NoOpGroupManager : IGroupManager
+    {
+        public Task AddToGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task RemoveFromGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }

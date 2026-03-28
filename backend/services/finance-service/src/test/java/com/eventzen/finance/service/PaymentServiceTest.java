@@ -45,6 +45,9 @@ class PaymentServiceTest {
     private TicketingClient ticketingClient;
 
     @Mock
+    private VenueBookingClient venueBookingClient;
+
+    @Mock
     private InvoiceAssetService invoiceAssetService;
 
     private PaymentService paymentService;
@@ -57,6 +60,7 @@ class PaymentServiceTest {
                 razorpayClient,
                 notificationClient,
                 ticketingClient,
+                venueBookingClient,
                 invoiceAssetService,
                 new RazorpayProperties(true, "rzp_test_key", "super-secret", "EventZen", "Event registration payment")
         );
@@ -213,6 +217,7 @@ class PaymentServiceTest {
                 payment.getEventId(),
                 payment.getEventName(),
                 payment.getRegistrationId(),
+                payment.getVenueBookingId(),
                 payment.getAmount(),
                 payment.getCurrency(),
                 payment.getPaymentMethod(),

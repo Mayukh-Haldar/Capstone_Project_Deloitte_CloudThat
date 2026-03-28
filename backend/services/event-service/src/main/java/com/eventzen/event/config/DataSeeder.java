@@ -1,6 +1,7 @@
 package com.eventzen.event.config;
 
 import com.eventzen.event.model.Event;
+import com.eventzen.event.model.EventApprovalStatus;
 import com.eventzen.event.model.EventAgendaItem;
 import com.eventzen.event.model.EventCategory;
 import com.eventzen.event.model.EventSession;
@@ -33,6 +34,10 @@ public class DataSeeder {
     private static final UUID NORTHSTAR_VENDOR_ACCOUNT_ID = UUID.fromString("92000000-0000-0000-0000-000000000002");
     private static final UUID CANVAS_VENDOR_ACCOUNT_ID = UUID.fromString("92000000-0000-0000-0000-000000000003");
     private static final UUID SHIELDLINE_VENDOR_ACCOUNT_ID = UUID.fromString("92000000-0000-0000-0000-000000000004");
+    private static final String PULSECRAFT_VENDOR_EMAIL = "bookings@pulsecraftav.example";
+    private static final String NORTHSTAR_VENDOR_EMAIL = "hello@northstarcatering.example";
+    private static final String CANVAS_VENDOR_EMAIL = "studio@canvasbloom.example";
+    private static final String SHIELDLINE_VENDOR_EMAIL = "ops@shieldline.example";
 
     @Bean
     ApplicationRunner seedEventCatalog(
@@ -78,6 +83,7 @@ public class DataSeeder {
                 new EventSeed(
                         UUID.fromString("70000000-0000-0000-0000-000000000001"),
                         PULSECRAFT_VENDOR_ACCOUNT_ID,
+                        PULSECRAFT_VENDOR_EMAIL,
                         "TECH",
                         "AI Leadership Summit 2026",
                         "Conference",
@@ -119,6 +125,7 @@ public class DataSeeder {
                 new EventSeed(
                         UUID.fromString("70000000-0000-0000-0000-000000000002"),
                         NORTHSTAR_VENDOR_ACCOUNT_ID,
+                        NORTHSTAR_VENDOR_EMAIL,
                         "ARTS",
                         "Design Futures Expo",
                         "Expo",
@@ -155,6 +162,7 @@ public class DataSeeder {
                 new EventSeed(
                         UUID.fromString("70000000-0000-0000-0000-000000000003"),
                         CANVAS_VENDOR_ACCOUNT_ID,
+                        CANVAS_VENDOR_EMAIL,
                         "BUSINESS",
                         "FinOps Executive Forum",
                         "Forum",
@@ -191,6 +199,7 @@ public class DataSeeder {
                 new EventSeed(
                         UUID.fromString("70000000-0000-0000-0000-000000000004"),
                         SHIELDLINE_VENDOR_ACCOUNT_ID,
+                        SHIELDLINE_VENDOR_EMAIL,
                         "COMMUNITY",
                         "Riverfront Makers Fair",
                         "Festival",
@@ -234,6 +243,7 @@ public class DataSeeder {
             Event event = new Event();
             event.setId(seed.id());
             event.setOrganizerId(seed.organizerId());
+            event.setOrganizerEmail(seed.organizerEmail());
             event.setCategory(category);
             event.setTitle(seed.title());
             event.setEventType(seed.eventType());
@@ -243,6 +253,9 @@ public class DataSeeder {
             event.setExpectedAttendees(seed.expectedAttendees());
             event.setCapacity(seed.capacity());
             event.setEstimatedBudget(seed.estimatedBudget());
+            event.setProposedBudget(seed.estimatedBudget());
+            event.setApprovedBudget(seed.estimatedBudget());
+            event.setApprovalStatus(EventApprovalStatus.APPROVED);
             event.setStatus(seed.status());
             event.setRecurrenceRule(RecurrenceRule.NONE);
             event.setVenueId(seed.venueId());
@@ -289,6 +302,7 @@ public class DataSeeder {
     private record EventSeed(
             UUID id,
             UUID organizerId,
+            String organizerEmail,
             String categoryName,
             String title,
             String eventType,

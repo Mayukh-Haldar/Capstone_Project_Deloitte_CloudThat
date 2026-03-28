@@ -11,6 +11,17 @@ public sealed record CreateTicketTypeRequest(
     DateTimeOffset? SaleEndsAt
 );
 
+public sealed record UpdateTicketTypeRequest(
+    string TicketName,
+    string TierCode,
+    decimal Price,
+    int TotalQuantity,
+    int MaxPerOrder,
+    string? Description,
+    DateTimeOffset? SaleStartsAt,
+    DateTimeOffset? SaleEndsAt
+);
+
 public sealed record RegisterAttendeeRequest(
     Guid EventId,
     Guid TicketTypeId,
@@ -51,7 +62,9 @@ public sealed record RegistrationResponse(
     TicketResponse Ticket,
     string? SeatRow = null,
     int? SeatColumn = null,
-    string? SeatLabel = null
+    string? SeatLabel = null,
+    string? AttendeeUserId = null,
+    string? AttendeeEmail = null
 );
 
 public sealed record TicketResponse(

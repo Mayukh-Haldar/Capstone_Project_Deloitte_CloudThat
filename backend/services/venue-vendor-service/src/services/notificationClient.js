@@ -13,7 +13,7 @@ const sendInAppNotification = async ({
     const timeout = setTimeout(() => controller.abort(), 2000);
 
     try {
-      await fetch(`${env.notificationServiceBaseUrl.replace(/\/$/, "")}/api/v1/notifications/send`, {
+      const response = await fetch(`${env.notificationServiceBaseUrl.replace(/\/$/, "")}/api/v1/notifications/send`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -33,11 +33,17 @@ const sendInAppNotification = async ({
         }),
         signal: controller.signal
       });
+
+      if (!response.ok) {
+        const details = await response.text().catch(() => "");
+        throw new Error(`Notification service responded with ${response.status}${details ? `: ${details}` : ""}`);
+      }
     } finally {
       clearTimeout(timeout);
     }
-  } catch (_error) {
+  } catch (error) {
     // Notification delivery is best-effort and must not break the booking flow.
+    console.warn("Failed to deliver venue notification:", error.message);
   }
 };
 

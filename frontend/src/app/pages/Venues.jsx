@@ -4,10 +4,36 @@ import { Link, useLocation } from "react-router";
 import { DateTimeScheduler } from "../components/ui/date-time-scheduler";
 import { venueVendorApi } from "../lib/venue-vendor-api";
 import { eventApi } from "../lib/event-api";
+import { financeApi } from "../lib/finance-api";
 import { ApiClientError } from "../lib/http-client";
 import { useAuthSession } from "../lib/auth-storage";
 import { portalFromPath } from "../lib/roles";
 const serviceCategories = ["CATERING", "AV", "DECOR", "SECURITY", "PHOTOGRAPHY"];
+const RAZORPAY_SCRIPT_ID = "razorpay-checkout-js";
+const loadRazorpayScript = async () => {
+    if (typeof window === "undefined") {
+        return false;
+    }
+    if (window.Razorpay) {
+        return true;
+    }
+    const existing = document.getElementById(RAZORPAY_SCRIPT_ID);
+    if (existing) {
+        return await new Promise((resolve) => {
+            existing.addEventListener("load", () => resolve(true), { once: true });
+            existing.addEventListener("error", () => resolve(false), { once: true });
+        });
+    }
+    return await new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.id = RAZORPAY_SCRIPT_ID;
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
 export function Venues() {
     const location = useLocation();
     const session = useAuthSession();
@@ -33,6 +59,8 @@ export function Venues() {
     const [bookingEnd, setBookingEnd] = useState("");
     const [bookingHallIds, setBookingHallIds] = useState([]);
     const [bookingLoading, setBookingLoading] = useState(false);
+    const [payingBookingId, setPayingBookingId] = useState("");
+    const [cancellingBookingId, setCancellingBookingId] = useState("");
     const [venueName, setVenueName] = useState("");
     const [venueAddress, setVenueAddress] = useState("");
     const [venueCity, setVenueCity] = useState("");
@@ -207,13 +235,19 @@ export function Venues() {
         }
         setBookingLoading(true);
         try {
-            await venueVendorApi.createBooking(bookingVenueId, {
+            const booking = await venueVendorApi.createBooking(bookingVenueId, {
                 eventId: bookingEventId.trim(),
                 bookingStart: new Date(bookingStart).toISOString(),
                 bookingEnd: new Date(bookingEnd).toISOString(),
                 hallIds: bookingHallIds
             });
-            setMessage("Booking created successfully.");
+            const selectedEvent = eventLookup[bookingEventId.trim()];
+            if (booking.paymentStatus === "PENDING" && Number(booking.paymentAmount) > 0) {
+                setMessage(`Booking reserved. Complete the payment of ${booking.paymentCurrency || "INR"} ${booking.paymentAmount} to confirm the venue.`);
+            }
+            else {
+                setMessage("Booking created successfully.");
+            }
             setBookingVenueId("");
             setBookingEventId("");
             setBookingStart("");
@@ -221,6 +255,9 @@ export function Venues() {
             setBookingHallIds([]);
             await loadVenues();
             await loadBookings();
+            if (!isAdminPortal && booking.paymentStatus === "PENDING" && Number(booking.paymentAmount) > 0) {
+                await handleBookingPayment(booking, selectedEvent);
+            }
         }
         catch (err) {
             if (err instanceof ApiClientError) {
@@ -232,6 +269,97 @@ export function Venues() {
         }
         finally {
             setBookingLoading(false);
+        }
+    };
+    const handleBookingPayment = async (booking, linkedEvent) => {
+        if (!session?.user?.email) {
+            setError("Login again before completing the booking payment.");
+            return;
+        }
+        setError("");
+        setMessage("");
+        setPayingBookingId(booking.bookingId);
+        try {
+            const payment = await financeApi.initiatePayment({
+                eventId: booking.eventId,
+                eventName: linkedEvent?.title || `Venue booking ${booking.bookingId.slice(0, 8)}`,
+                registrationId: null,
+                venueBookingId: booking.bookingId,
+                amount: booking.paymentAmount,
+                currency: booking.paymentCurrency || "INR",
+                paymentMethod: "CARD",
+                customerEmail: booking.bookingOwnerEmail || session.user.email,
+                description: `Venue booking payment for ${linkedEvent?.title || booking.eventId}`
+            });
+            if (payment.status === "SUCCEEDED") {
+                setMessage(`Venue payment ${payment.gatewayReference} succeeded. Invoice ${payment.invoiceNumber || ""}`.trim());
+                await loadBookings();
+                return;
+            }
+            const loaded = await loadRazorpayScript();
+            if (!loaded || !window.Razorpay || !payment.gatewayOrderId || !payment.checkoutKeyId) {
+                setError("Payment system unavailable right now. Your booking is still reserved and can be paid later from the bookings table.");
+                return;
+            }
+            const razorpay = new window.Razorpay({
+                key: payment.checkoutKeyId,
+                amount: payment.checkoutAmount,
+                currency: payment.currency,
+                name: payment.checkoutName || "EventZen",
+                description: payment.checkoutDescription || payment.description,
+                order_id: payment.gatewayOrderId,
+                prefill: {
+                    email: booking.bookingOwnerEmail || session.user.email
+                },
+                notes: {
+                    bookingId: booking.bookingId,
+                    eventId: booking.eventId
+                },
+                theme: {
+                    color: "#1132d4"
+                },
+                handler: async (response) => {
+                    const verified = await financeApi.verifyPayment({
+                        razorpayOrderId: response.razorpay_order_id,
+                        razorpayPaymentId: response.razorpay_payment_id,
+                        razorpaySignature: response.razorpay_signature
+                    });
+                    setMessage(`Venue booking payment ${verified.gatewayPaymentId || verified.gatewayReference} succeeded.`);
+                    await loadBookings();
+                },
+                modal: {
+                    ondismiss: () => {
+                        setMessage("Venue booking payment is still pending. You can complete it later from the bookings list.");
+                    }
+                }
+            });
+            razorpay.open();
+        }
+        catch (err) {
+            setError(err instanceof ApiClientError ? err.message : "Venue payment could not be started.");
+        }
+        finally {
+            setPayingBookingId("");
+        }
+    };
+    const handleCancelBooking = async (booking) => {
+        const confirmed = window.confirm(`Cancel venue booking "${booking.bookingId}"? This will release the reserved venue slot.`);
+        if (!confirmed) {
+            return;
+        }
+        setError("");
+        setMessage("");
+        setCancellingBookingId(booking.bookingId);
+        try {
+            await venueVendorApi.cancelBooking(booking.bookingId, {});
+            setMessage(`Venue booking ${booking.bookingId} was cancelled.`);
+            await loadBookings();
+        }
+        catch (err) {
+            setError(err instanceof ApiClientError ? err.message : "Unable to cancel the venue booking.");
+        }
+        finally {
+            setCancellingBookingId("");
         }
     };
     const handleVenueHallChange = (index, field, value) => {
@@ -498,13 +626,15 @@ export function Venues() {
                   <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-white/10">
                     <tr>
                       <th className="px-3 py-3">Booking</th>
-                      <th className="px-3 py-3">Vendor</th>
+                      <th className="px-3 py-3">Booking Owner</th>
                       <th className="px-3 py-3">Venue</th>
                       <th className="px-3 py-3">Event</th>
                       <th className="px-3 py-3">Start</th>
                       <th className="px-3 py-3">End</th>
                       <th className="px-3 py-3">Duration</th>
                       <th className="px-3 py-3">Halls</th>
+                      <th className="px-3 py-3">Payment</th>
+                      <th className="px-3 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -512,6 +642,10 @@ export function Venues() {
                 const venue = venueLookup[booking.venueId];
                 const linkedEvent = eventLookup[booking.eventId];
                 const vendor = booking.vendorId ? vendorLookup[booking.vendorId] : undefined;
+                const paymentPending = booking.paymentStatus !== "PAID" && Number(booking.paymentAmount) > 0;
+                const paymentDisplay = Number(booking.paymentAmount || 0) > 0
+                    ? (paymentPending ? "Payment pending" : "Paid")
+                    : "No payment due";
                 return (<tr key={booking.bookingId} className="border-b border-slate-100 align-top dark:border-white/5">
                           <td className="px-3 py-3 text-sm">
                             <p className="font-semibold">{booking.bookingId}</p>
@@ -521,8 +655,14 @@ export function Venues() {
                             {vendor ? (<>
                                 <p className="font-semibold">{vendor.vendorName}</p>
                                 <p className="text-xs text-slate-500">{vendor.serviceType}</p>
+                              </>) : (booking.bookingOwnerEmail || linkedEvent?.organizerEmail) ? (<>
+                                <p className="font-semibold">{booking.bookingOwnerEmail || linkedEvent?.organizerEmail}</p>
+                                <p className="text-xs text-slate-500">{booking.createdBy !== booking.bookingOwnerId ? "Assigned organizer" : "Booking owner"}</p>
+                              </>) : booking.createdByEmail ? (<>
+                                <p className="font-semibold">{booking.createdByEmail}</p>
+                                <p className="text-xs text-slate-500">Booking owner</p>
                               </>) : (<>
-                                <p className="font-semibold text-slate-400">No vendor assigned</p>
+                                <p className="font-semibold text-slate-400">Owner unavailable</p>
                                 <p className="text-xs text-slate-500">Booking ID: {booking.bookingId.slice(0, 8)}...</p>
                               </>)}
                           </td>
@@ -552,6 +692,26 @@ export function Venues() {
                             .map((hallId) => venue?.halls.find((hall) => hall.hallId === hallId)?.hallName || hallId)
                             .join(", ")
                         : "Whole venue"}
+                          </td>
+                          <td className="px-3 py-3 text-sm">
+                            <p className={`font-semibold ${paymentPending ? "text-amber-600" : "text-emerald-600"}`}>
+                              {paymentDisplay}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {(booking.paymentCurrency || "INR")} {Number(booking.paymentAmount || 0).toLocaleString()}
+                            </p>
+                            {booking.invoiceNumber ? <p className="text-xs text-slate-500">Invoice {booking.invoiceNumber}</p> : null}
+                            {!isAdminPortal && paymentPending ? (<button type="button" onClick={() => void handleBookingPayment(booking, linkedEvent)} disabled={payingBookingId === booking.bookingId} className="mt-2 rounded-lg bg-[#1132d4] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60">
+                                {payingBookingId === booking.bookingId ? "Starting..." : "Pay now"}
+                              </button>) : null}
+                            {booking.paymentId ? (<button type="button" onClick={() => void financeApi.downloadInvoice(booking.paymentId, `venue-booking-${booking.bookingId}.pdf`)} className="mt-2 block rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">
+                                Download invoice
+                              </button>) : null}
+                          </td>
+                          <td className="px-3 py-3 text-sm">
+                            <button type="button" onClick={() => void handleCancelBooking(booking)} disabled={cancellingBookingId === booking.bookingId} className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10">
+                              {cancellingBookingId === booking.bookingId ? "Cancelling..." : "Cancel booking"}
+                            </button>
                           </td>
                         </tr>);
             })}

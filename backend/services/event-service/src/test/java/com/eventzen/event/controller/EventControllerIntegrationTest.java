@@ -38,6 +38,7 @@ class EventControllerIntegrationTest {
 
     private UUID categoryId;
     private String organizerToken;
+    private String adminToken;
 
     @BeforeEach
     void setUp() {
@@ -50,6 +51,16 @@ class EventControllerIntegrationTest {
                 .claim("type", "access")
                 .claim("uid", UUID.randomUUID().toString())
                 .claim("authorities", List.of("ROLE_ORGANIZER"))
+                .signWith(Keys.hmacShaKeyFor(TEST_JWT_SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+        adminToken = Jwts.builder()
+                .subject("admin@eventzen.local")
+                .issuer("eventzen-auth-service")
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusSeconds(3600)))
+                .claim("type", "access")
+                .claim("uid", UUID.randomUUID().toString())
+                .claim("authorities", List.of("ROLE_ADMIN"))
                 .signWith(Keys.hmacShaKeyFor(TEST_JWT_SECRET.getBytes(StandardCharsets.UTF_8)))
                 .compact();
     }
@@ -86,7 +97,40 @@ class EventControllerIntegrationTest {
                         .content(payload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.event.title").value("Global AI Summit 2030"))
-                .andExpect(jsonPath("$.event.status").value("DRAFT"));
+                .andExpect(jsonPath("$.event.status").value("PENDING_APPROVAL"))
+                .andExpect(jsonPath("$.event.approvalStatus").value("PENDING"))
+                .andExpect(jsonPath("$.event.proposedBudget").value(250000));
+    }
+
+    @Test
+    void adminCanCreateApprovedDraftEvent() throws Exception {
+        String payload = """
+                {
+                  "organizerId": "%s",
+                  "categoryId": "%s",
+                  "title": "Admin Curated Summit 2030",
+                  "eventType": "CONFERENCE",
+                  "description": "Admin-led summit",
+                  "startTime": "2030-10-24T09:00:00Z",
+                  "endTime": "2030-10-24T17:00:00Z",
+                  "expectedAttendees": 400,
+                  "capacity": 500,
+                  "estimatedBudget": 350000,
+                  "recurrenceRule": "NONE",
+                  "tags": ["admin", "enterprise"],
+                  "agendaItems": []
+                }
+                """.formatted(UUID.randomUUID(), categoryId);
+
+        mockMvc.perform(post("/api/v1/events")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.event.title").value("Admin Curated Summit 2030"))
+                .andExpect(jsonPath("$.event.status").value("DRAFT"))
+                .andExpect(jsonPath("$.event.approvalStatus").value("APPROVED"))
+                .andExpect(jsonPath("$.event.approvedBudget").value(350000));
     }
 
     @Test

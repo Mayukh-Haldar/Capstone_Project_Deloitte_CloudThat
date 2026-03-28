@@ -43,11 +43,19 @@ export default defineConfig({
       "/api/v1/expenses": { target: proxyTargets.finance, changeOrigin: true },
       "/api/v1/budgets": { target: proxyTargets.finance, changeOrigin: true },
       "/api/v1/notifications": { target: proxyTargets.notification, changeOrigin: true },
-      "/socket.io": { target: proxyTargets.notification, changeOrigin: true, ws: true }
+      "/socket.io": { target: proxyTargets.notification, changeOrigin: true, ws: true },
+      // SignalR hub — must appear before the catch-all /api routes
+      "/seat-hub": { target: proxyTargets.ticketing, changeOrigin: true, ws: true }
     }
   },
   build: {
     rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        // @microsoft/signalr ships /*#__PURE__*/ annotations in positions that
+        // Rollup cannot parse; the comments are safely removed so we suppress the noise.
+        if (warning.code === "INVALID_ANNOTATION" && warning.id?.includes("@microsoft/signalr")) return;
+        defaultHandler(warning);
+      },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
@@ -68,6 +76,9 @@ export default defineConfig({
           if (id.includes("react-dnd")) return "dnd";
           if (id.includes("react-resizable-panels")) return "panels";
           if (id.includes("lucide-react")) return "icons";
+          // three.js + postprocessing were the main contributors to the oversized vendor chunk
+          if (id.includes("/three/") || id.includes("postprocessing")) return "three";
+          if (id.includes("@microsoft/signalr")) return "signalr";
           return "vendor";
         },
       },

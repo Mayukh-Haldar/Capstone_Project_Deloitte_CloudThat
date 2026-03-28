@@ -38,7 +38,7 @@ const createNotificationRouter = () => {
       if (req.query.status) filter.status = req.query.status;
       if (req.query.channel) filter.channel = req.query.channel;
       if (req.query.eventType) filter.eventType = req.query.eventType;
-      if (req.query.unreadOnly) filter.readAt = null;
+      if (req.query.unreadOnly) filter.status = { $ne: "READ" };
 
       const [items, totalElements] = await Promise.all([
         Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(size).lean(),

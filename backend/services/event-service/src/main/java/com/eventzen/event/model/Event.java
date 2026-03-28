@@ -32,6 +32,9 @@ public class Event extends BaseEntity {
     @Column(nullable = false)
     private UUID organizerId;
 
+    @Column(nullable = true)
+    private String organizerEmail;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private EventCategory category;
@@ -64,9 +67,26 @@ public class Event extends BaseEntity {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal estimatedBudget;
 
+    @Column(nullable = false, precision = 14, scale = 2)
+    private BigDecimal proposedBudget;
+
+    @Column(precision = 14, scale = 2)
+    private BigDecimal approvedBudget;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 24)
+    private EventApprovalStatus approvalStatus;
+
+    @Column(length = 2000)
+    private String approvalNote;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private EventStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private EventStatus previousStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -111,6 +131,14 @@ public class Event extends BaseEntity {
 
     public void setOrganizerId(UUID organizerId) {
         this.organizerId = organizerId;
+    }
+
+    public String getOrganizerEmail() {
+        return organizerEmail;
+    }
+
+    public void setOrganizerEmail(String organizerEmail) {
+        this.organizerEmail = organizerEmail;
     }
 
     public EventCategory getCategory() {
@@ -193,12 +221,52 @@ public class Event extends BaseEntity {
         this.estimatedBudget = estimatedBudget;
     }
 
+    public BigDecimal getProposedBudget() {
+        return proposedBudget;
+    }
+
+    public void setProposedBudget(BigDecimal proposedBudget) {
+        this.proposedBudget = proposedBudget;
+    }
+
+    public BigDecimal getApprovedBudget() {
+        return approvedBudget;
+    }
+
+    public void setApprovedBudget(BigDecimal approvedBudget) {
+        this.approvedBudget = approvedBudget;
+    }
+
+    public EventApprovalStatus getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(EventApprovalStatus approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+
+    public String getApprovalNote() {
+        return approvalNote;
+    }
+
+    public void setApprovalNote(String approvalNote) {
+        this.approvalNote = approvalNote;
+    }
+
     public EventStatus getStatus() {
         return status;
     }
 
     public void setStatus(EventStatus status) {
         this.status = status;
+    }
+
+    public EventStatus getPreviousStatus() {
+        return previousStatus;
+    }
+
+    public void setPreviousStatus(EventStatus previousStatus) {
+        this.previousStatus = previousStatus;
     }
 
     public RecurrenceRule getRecurrenceRule() {

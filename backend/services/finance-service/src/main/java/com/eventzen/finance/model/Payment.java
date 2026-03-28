@@ -28,6 +28,9 @@ public class Payment {
     @Column(name = "registration_id")
     private UUID registrationId;
 
+    @Column(name = "venue_booking_id")
+    private UUID venueBookingId;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
@@ -119,6 +122,14 @@ public class Payment {
 
     public void setRegistrationId(UUID registrationId) {
         this.registrationId = registrationId;
+    }
+
+    public UUID getVenueBookingId() {
+        return venueBookingId;
+    }
+
+    public void setVenueBookingId(UUID venueBookingId) {
+        this.venueBookingId = venueBookingId;
     }
 
     public BigDecimal getAmount() {

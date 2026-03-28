@@ -12,6 +12,7 @@ public record CreatePaymentRequest(
         @NotNull UUID eventId,
         @NotBlank String eventName,
         UUID registrationId,
+        UUID venueBookingId,
         @NotNull @Positive BigDecimal amount,
         @NotBlank String currency,
         @NotNull PaymentMethod paymentMethod,

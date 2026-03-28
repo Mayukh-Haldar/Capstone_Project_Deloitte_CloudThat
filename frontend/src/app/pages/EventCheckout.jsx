@@ -1,5 +1,5 @@
 import { ArrowLeft, CreditCard, ShieldCheck, Ticket, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useAuthSession } from "../lib/auth-storage";
 import { eventApi, getEventStatusLabel, isRegistrationOpen } from "../lib/event-api";
@@ -42,6 +42,7 @@ export function EventCheckout() {
     const seatColParam = searchParams.get("seatCol");
     const reservationIdParam = searchParams.get("reservationId");
     const hasSeat = Boolean(seatRowParam && seatColParam);
+    const reservationIdRef = useRef(hasSeat && reservationIdParam ? reservationIdParam : null);
     const navigate = useNavigate();
     const session = useAuthSession();
     const [eventDetail, setEventDetail] = useState(null);
@@ -133,6 +134,24 @@ export function EventCheckout() {
     }, [id, ticketTypeId, session]);
     const profileHasPhone = Boolean(session?.user.phone?.trim());
     const effectiveCheckoutMode = profileHasPhone ? checkoutMode : "MANUAL";
+    useEffect(() => {
+        return () => {
+            if (reservationIdRef.current && ticketTypeId) {
+                ticketingApi.cancelReservation(ticketTypeId, reservationIdRef.current).catch(() => {});
+            }
+        };
+    }, [ticketTypeId]);
+    const handleBack = async () => {
+        if (reservationIdRef.current && ticketTypeId) {
+            try {
+                await ticketingApi.cancelReservation(ticketTypeId, reservationIdRef.current);
+            } catch {
+                // best-effort
+            }
+            reservationIdRef.current = null;
+        }
+        void navigate(`/events/${id}`);
+    };
     const confirmCheckout = async () => {
         if (!id || !ticketTypeId || !session || !ticketType || !eventDetail) {
             setCheckoutError("Unable to continue with checkout.");
@@ -158,6 +177,7 @@ export function EventCheckout() {
             if (existingReg) {
                 setCheckoutError("You have successfully registered for this event. Redirecting to your tickets...");
                 setTimeout(() => {
+                    reservationIdRef.current = null;
                     void navigate("/my/registrations");
                 }, 2000);
                 return;
@@ -267,6 +287,7 @@ export function EventCheckout() {
                             }
                             catch (verifyErr) {
                                 if (isLocalDevHost()) {
+                                    reservationIdRef.current = null;
                                     void navigate("/my/registrations", {
                                         replace: true,
                                         state: {
@@ -281,6 +302,7 @@ export function EventCheckout() {
                                 setActionMessage(verifyErr instanceof ApiClientError
                                     ? `Payment verification is pending because the finance service returned: ${verifyErr.message}. Your registration has been kept. Please check My Registrations / My Tickets before retrying payment.`
                                     : "Payment verification is pending. Your registration has been kept. Please check My Registrations / My Tickets before retrying payment.");
+                                reservationIdRef.current = null;
                                 void navigate("/my/registrations", {
                                     replace: true,
                                     state: {
@@ -324,6 +346,7 @@ export function EventCheckout() {
                     return;
                 }
             }
+            reservationIdRef.current = null;
             void navigate("/my/registrations", {
                 replace: true,
                 state: {
@@ -345,10 +368,10 @@ export function EventCheckout() {
         return (<section className="p-8">
         <p className="text-sm text-red-600">{error || "Checkout is unavailable."}</p>
         {id && (<>
-            <Link to={`/events/${id}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
+            <button type="button" onClick={() => void handleBack()} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
               <ArrowLeft className="size-4"/>
               Back to event
-            </Link>
+            </button>
             {alreadyRegistered && (<Link to="/my/registrations" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 block">
                 View your tickets
               </Link>)}
@@ -357,10 +380,10 @@ export function EventCheckout() {
     }
     return (<section className="min-h-screen bg-[#f3f5f9] px-4 py-8 text-slate-900 dark:bg-[#09132a] dark:text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        <Link to={`/events/${id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
+        <button type="button" onClick={() => void handleBack()} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
           <ArrowLeft className="size-4"/>
           Back to event
-        </Link>
+        </button>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0f172e]">

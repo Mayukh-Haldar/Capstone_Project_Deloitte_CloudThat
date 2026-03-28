@@ -8,6 +8,8 @@ namespace EventZen.Ticketing.Api.Services;
 
 public sealed class TicketDeliveryAssetService
 {
+    private static readonly TimeZoneInfo EventTimeZone = ResolveEventTimeZone();
+
     public string BuildConfirmationEmailHtml(RegistrationDocument registration, TicketDocument ticket)
     {
         var border = "#d8e2ff";
@@ -204,29 +206,27 @@ public sealed class TicketDeliveryAssetService
         WriteText(commands, "TICKET TYPE", ticketX + 25, currentY, 9, "Helvetica-Bold", 150, 180, 255);
         WriteText(commands, "TICKET SERIAL", ticketX + 180, currentY, 9, "Helvetica-Bold", 150, 180, 255);
         currentY -= 15m;
-        // Truncate ticket type name somewhat if excessively long to avoid horizontal overlap
-        string safeTypeName = registration.TicketTypeName.Length > 15 ? registration.TicketTypeName.Substring(0, 15) + "..." : registration.TicketTypeName;
-        WriteText(commands, safeTypeName, ticketX + 25, currentY, 12, "Helvetica-Bold", 255, 255, 255);
-        WriteText(commands, serial, ticketX + 180, currentY, 12, "Helvetica-Bold", 255, 255, 255);
-        currentY -= 35m;
+        var ticketTypeLines = WriteWrappedText(commands, registration.TicketTypeName, ticketX + 25, currentY, 12, "Helvetica-Bold", 255, 255, 255, 18, 14);
+        var serialLines = WriteWrappedText(commands, serial, ticketX + 180, currentY, 12, "Helvetica-Bold", 255, 255, 255, 12, 14);
+        currentY -= Math.Max(ticketTypeLines, serialLines) * 14m + 18m;
 
         if (registration.SeatRow is not null && registration.SeatColumn is not null)
         {
             WriteText(commands, "SEAT", ticketX + 25, currentY, 9, "Helvetica-Bold", 150, 180, 255);
             currentY -= 15m;
-            WriteText(commands, $"Row {registration.SeatRow}  /  No. {registration.SeatColumn}", ticketX + 25, currentY, 12, "Helvetica-Bold", 255, 255, 255);
-            currentY -= 35m;
+            var seatLines = WriteWrappedText(commands, $"Row {registration.SeatRow} / No. {registration.SeatColumn}", ticketX + 25, currentY, 12, "Helvetica-Bold", 255, 255, 255, 22, 14);
+            currentY -= seatLines * 14m + 18m;
         }
 
         WriteText(commands, "REGISTRATION ID", ticketX + 25, currentY, 9, "Helvetica-Bold", 150, 180, 255);
         currentY -= 15m;
-        WriteText(commands, registration.Id.ToString(), ticketX + 25, currentY, 11, "Courier", 255, 255, 255);
-        currentY -= 30m;
+        var registrationIdLines = WriteWrappedText(commands, registration.Id.ToString(), ticketX + 25, currentY, 11, "Courier", 255, 255, 255, 26, 12);
+        currentY -= registrationIdLines * 12m + 18m;
 
         WriteText(commands, "VERIFICATION DATA", ticketX + 25, currentY, 9, "Helvetica-Bold", 150, 180, 255);
         currentY -= 15m;
-        WriteMultilineText(commands, ticket.QrPayload, ticketX + 25, currentY, 8, "Courier", 200, 220, 255, 48, 10);
-        currentY -= 35m;
+        var verificationLines = WriteWrappedText(commands, ticket.QrPayload, ticketX + 25, currentY, 8, "Courier", 200, 220, 255, 42, 10);
+        currentY -= verificationLines * 10m + 18m;
 
         // QR Code securely placed below text
         decimal qrSize = 120m;
@@ -267,7 +267,27 @@ public sealed class TicketDeliveryAssetService
 
     private static string FormatDateTime(DateTimeOffset value)
     {
-        return value.ToLocalTime().ToString("ddd, dd MMM yyyy - hh:mm tt", CultureInfo.InvariantCulture);
+        var localized = TimeZoneInfo.ConvertTime(value, EventTimeZone);
+        return localized.ToString("ddd, dd MMM yyyy - hh:mm tt", CultureInfo.InvariantCulture);
+    }
+
+    private static TimeZoneInfo ResolveEventTimeZone()
+    {
+        foreach (var timeZoneId in new[] { "Asia/Kolkata", "India Standard Time" })
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+            }
+            catch (InvalidTimeZoneException)
+            {
+            }
+        }
+
+        return TimeZoneInfo.Utc;
     }
 
     private static string GetTicketSerial(string ticketNumber)
@@ -318,6 +338,30 @@ public sealed class TicketDeliveryAssetService
             WriteText(commands, line, x, currentY, fontSize, fontName, r, g, b);
             currentY -= lineHeight;
         }
+    }
+
+    private static int WriteWrappedText(
+        List<string> commands,
+        string text,
+        decimal x,
+        decimal y,
+        decimal fontSize,
+        string fontName,
+        int r,
+        int g,
+        int b,
+        int maxCharsPerLine,
+        decimal lineHeight)
+    {
+        var lines = WrapText(text, maxCharsPerLine).ToList();
+        var currentY = y;
+        foreach (var line in lines)
+        {
+            WriteText(commands, line, x, currentY, fontSize, fontName, r, g, b);
+            currentY -= lineHeight;
+        }
+
+        return Math.Max(lines.Count, 1);
     }
 
     private static IEnumerable<string> WrapText(string text, int maxCharsPerLine)

@@ -19,8 +19,13 @@ module.exports = {
     process.env.JWT_SECRET ||
     "change-me-change-me-change-me-change-me-1234567890",
   jwtIssuer: process.env.AUTH_JWT_ISSUER || "eventzen-auth-service",
+  eventServiceBaseUrl: process.env.EVENT_SERVICE_BASE_URL || "http://localhost:8082",
   notificationServiceBaseUrl: process.env.NOTIFICATION_SERVICE_BASE_URL || "http://localhost:8086",
   notificationInternalServiceKey:
+    process.env.NOTIFICATION_INTERNAL_SERVICE_KEY ||
+    "eventzen-internal-key",
+  internalServiceKey:
+    process.env.VENUE_VENDOR_INTERNAL_SERVICE_KEY ||
     process.env.NOTIFICATION_INTERNAL_SERVICE_KEY ||
     "eventzen-internal-key",
   corsOrigin: process.env.CORS_ORIGIN || "*",

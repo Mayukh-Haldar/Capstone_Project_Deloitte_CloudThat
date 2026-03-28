@@ -2,6 +2,8 @@ import { eventApiPath } from "./api-config";
 import { request } from "./http-client";
 export const getEventStatusLabel = (status) => {
     switch (status) {
+        case "PENDING_APPROVAL":
+            return "Pending Approval";
         case "DRAFT":
             return "Draft Event";
         case "PUBLISHED":
@@ -16,12 +18,18 @@ export const getEventStatusLabel = (status) => {
             return "Completed Event";
         case "ARCHIVED":
             return "Archived Event";
+        case "DISABLED_BY_VENDOR":
+            return "Disabled by Owner";
+        case "DISABLED_BY_ADMIN":
+            return "Disabled by Admin";
         default:
             return String(status).split("_").join(" ");
     }
 };
 export const isRegistrationOpen = (status) => status === "REGISTRATION_OPEN";
+export const isDisabledEvent = (status) => status === "DISABLED_BY_VENDOR" || status === "DISABLED_BY_ADMIN";
 export const isPubliclyDiscoverableEvent = (status) => status === "PUBLISHED" || status === "REGISTRATION_OPEN" || status === "REGISTRATION_CLOSED" || status === "ONGOING" || status === "COMPLETED";
+export const isPendingApprovalEvent = (event) => event?.status === "PENDING_APPROVAL";
 export const eventApi = {
     async listCategories() {
         const response = await request({ url: eventApiPath("/categories") });
@@ -127,6 +135,90 @@ export const eventApi = {
             url: eventApiPath(`/events/${eventId}/status`),
             method: "PATCH",
             body: { status },
+            auth: true
+        });
+        return response.data;
+    },
+    async disableEvent(eventId) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/disable`),
+            method: "POST",
+            auth: true
+        });
+        return response.data;
+    },
+    async enableEvent(eventId) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/enable`),
+            method: "POST",
+            auth: true
+        });
+        return response.data;
+    },
+    async requestEnableEvent(eventId, note) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/request-enable`),
+            method: "POST",
+            auth: true,
+            ...(note ? { body: { note } } : {})
+        });
+        return response.data;
+    },
+    async listEnableRequests() {
+        const response = await request({
+            url: eventApiPath("/events/enable-requests"),
+            auth: true
+        });
+        return response.data || [];
+    },
+    async approveEnableRequest(requestId, note) {
+        const response = await request({
+            url: eventApiPath(`/events/enable-requests/${requestId}/approve`),
+            method: "POST",
+            auth: true,
+            ...(note ? { body: { note } } : {})
+        });
+        return response.data;
+    },
+    async rejectEnableRequest(requestId, note) {
+        await request({
+            url: eventApiPath(`/events/enable-requests/${requestId}/reject`),
+            method: "POST",
+            auth: true,
+            ...(note ? { body: { note } } : {})
+        });
+    },
+    async approveEventRequest(eventId, payload) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/approval/approve`),
+            method: "POST",
+            auth: true,
+            body: payload
+        });
+        return response.data;
+    },
+    async requestEventChanges(eventId, note) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/approval/request-changes`),
+            method: "POST",
+            auth: true,
+            body: { note }
+        });
+        return response.data;
+    },
+    async rejectEventRequest(eventId, note) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/approval/reject`),
+            method: "POST",
+            auth: true,
+            body: note ? { note } : {}
+        });
+        return response.data;
+    },
+    async resubmitEventRequest(eventId) {
+        const response = await request({
+            url: eventApiPath(`/events/${eventId}/approval/resubmit`),
+            method: "POST",
             auth: true
         });
         return response.data;

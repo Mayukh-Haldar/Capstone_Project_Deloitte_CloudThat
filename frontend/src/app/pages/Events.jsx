@@ -173,8 +173,12 @@ export function Events() {
         void loadRegistrations();
     }, [session]);
     useEffect(() => {
+        suppressNextSuggestionsRef.current = true;
         setSearchDraft(query);
-    }, [query]);
+        setSearchSuggestions([]);
+        setSuggestionsOpen(false);
+        setSearchLoading(false);
+    }, [query, focusedEventId]);
     useEffect(() => {
         const trimmedQuery = searchDraft.trim();
         if (suppressNextSuggestionsRef.current) {
@@ -630,18 +634,18 @@ export function Events() {
                       <p className="line-clamp-3 min-h-[4.5rem] text-sm text-slate-600 dark:text-slate-300">{event.description}</p>
                     </div>
                     <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                      <p className="inline-flex min-h-10 items-start gap-2">
+                      <p className="flex min-h-10 w-full items-start gap-2">
                         <Calendar className="mt-0.5 size-4 shrink-0"/>
                         <span>{formatDate(event.startTime)}</span>
                       </p>
-                      <p className="inline-flex min-h-10 items-start gap-2">
+                      <p className="flex min-h-10 w-full items-start gap-2">
                         <MapPin className="mt-0.5 size-4 shrink-0"/>
                         <span className="line-clamp-2">
                           {event.venueName || "Venue TBD"}
                           {event.venueCity ? `, ${event.venueCity}` : ""}
                         </span>
                       </p>
-                      <p className="inline-flex min-h-10 items-start gap-2">
+                      <p className="flex min-h-10 w-full items-start gap-2">
                         <Tag className="mt-0.5 size-4 shrink-0"/>
                         <span className="line-clamp-2">{event.tags.length ? event.tags.join(", ") : event.eventType}</span>
                       </p>

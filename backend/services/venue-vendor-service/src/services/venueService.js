@@ -7,6 +7,12 @@ const { ROLE } = require("../constants/roles");
 
 const uniq = (items) => [...new Set((items || []).filter(Boolean))];
 
+const calculatePaymentAmount = (venue, bookingStart, bookingEnd) => {
+  const durationMs = new Date(bookingEnd).getTime() - new Date(bookingStart).getTime();
+  const dayCount = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+  return Number((Number(venue.pricePerDay || 0) * dayCount).toFixed(2));
+};
+
 const getHallLookup = (venue) =>
   Object.fromEntries((venue.halls || []).map((hall) => [hall.hallId, hall]));
 
@@ -63,6 +69,7 @@ const findOverlappingBookings = async ({
 }) => {
   return VenueBooking.find({
     venueId,
+    bookingStatus: { $ne: "CANCELLED" },
     bookingStart: { $lt: bookingEnd },
     bookingEnd: { $gt: bookingStart }
   }).lean();
@@ -123,11 +130,18 @@ const listVenueBookings = async (query, actor) => {
   if (query.upcomingOnly) {
     filters.bookingEnd = { $gte: new Date() };
   }
+  // Treat legacy bookings with no explicit status as active so they remain visible
+  // and consistent with the availability checks until they are cancelled.
+  filters.bookingStatus = { $ne: "CANCELLED" };
 
   const actorRoles = actor?.roles || [];
   const isAdmin = actorRoles.includes(ROLE.ADMIN);
   if (!isAdmin && actor?.id) {
-    filters.$or = [{ createdBy: actor.id }, { vendorId: actor.id }];
+    filters.$or = [
+      { createdBy: actor.id },
+      { vendorId: actor.id },
+      { bookingOwnerId: actor.id }
+    ];
   }
 
   const [items, total] = await Promise.all([
@@ -288,7 +302,10 @@ const createBooking = async ({
   bookingEnd,
   hallIds,
   createdBy,
-  vendorId
+  createdByEmail,
+  vendorId,
+  bookingOwnerId,
+  bookingOwnerEmail
 }) => {
   const venue = await findVenueOrThrow(venueId);
   const normalizedHallIds = validateAndNormalizeHallIds(venue, hallIds);
@@ -344,6 +361,10 @@ const createBooking = async ({
     );
   }
 
+  const paymentAmount = calculatePaymentAmount(venue, bookingStart, bookingEnd);
+  const normalizedOwnerId = bookingOwnerId || vendorId || createdBy;
+  const normalizedOwnerEmail = bookingOwnerEmail || createdByEmail;
+
   return VenueBooking.create({
     venueId,
     eventId,
@@ -351,8 +372,79 @@ const createBooking = async ({
     bookingEnd,
     hallIds: normalizedHallIds,
     createdBy,
-    vendorId
+    createdByEmail,
+    vendorId,
+    bookingOwnerId: normalizedOwnerId,
+    bookingOwnerEmail: normalizedOwnerEmail,
+    paymentStatus: paymentAmount > 0 ? "PENDING" : "PAID",
+    paymentAmount,
+    paymentCurrency: "INR",
+    paidAt: paymentAmount > 0 ? null : new Date()
   });
+};
+
+const confirmVenueBookingPayment = async ({
+  bookingId,
+  paymentId,
+  paymentReference,
+  invoiceNumber,
+  invoiceUrl,
+  amount,
+  currency
+}) => {
+  const booking = await VenueBooking.findOne({ bookingId });
+  if (!booking) {
+    throw new ApiError(404, "NOT_FOUND", errorCodes.NOT_FOUND, "Venue booking not found");
+  }
+
+  booking.paymentStatus = "PAID";
+  booking.paymentId = paymentId;
+  booking.paymentReference = paymentReference;
+  booking.invoiceNumber = invoiceNumber;
+  booking.invoiceUrl = invoiceUrl;
+  booking.paidAt = new Date();
+  if (typeof amount === "number" && Number.isFinite(amount)) {
+    booking.paymentAmount = Number(amount.toFixed(2));
+  }
+  if (currency) {
+    booking.paymentCurrency = currency;
+  }
+
+  await booking.save();
+  return booking.toObject();
+};
+
+const cancelVenueBooking = async ({
+  bookingId,
+  actor,
+  reason
+}) => {
+  const booking = await VenueBooking.findOne({ bookingId });
+  if (!booking) {
+    throw new ApiError(404, "NOT_FOUND", errorCodes.NOT_FOUND, "Venue booking not found");
+  }
+
+  if (booking.bookingStatus === "CANCELLED") {
+    throw new ApiError(409, "CONFLICT", errorCodes.CONFLICT, "Venue booking is already cancelled");
+  }
+
+  const actorRoles = actor?.roles || [];
+  const isAdmin = actorRoles.includes(ROLE.ADMIN);
+  const canManage = isAdmin
+    || actor?.id === booking.createdBy
+    || actor?.id === booking.bookingOwnerId
+    || actor?.id === booking.vendorId;
+
+  if (!canManage) {
+    throw new ApiError(403, "FORBIDDEN", errorCodes.AUTHORIZATION_ERROR, "You do not have access to cancel this booking");
+  }
+
+  booking.bookingStatus = "CANCELLED";
+  booking.cancelledAt = new Date();
+  booking.cancelledBy = actor.id;
+  booking.cancellationReason = reason || null;
+  await booking.save();
+  return booking.toObject();
 };
 
 module.exports = {
@@ -363,5 +455,7 @@ module.exports = {
   updateVenue,
   deactivateVenue,
   checkAvailability,
-  createBooking
+  createBooking,
+  confirmVenueBookingPayment,
+  cancelVenueBooking
 };

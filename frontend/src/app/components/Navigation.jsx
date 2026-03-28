@@ -7,9 +7,12 @@ import { clearAuthSession, useAuthSession } from "../lib/auth-storage";
 import { authApi } from "../lib/auth-api";
 import { useSidebar } from "./SidebarContext";
 import { notificationApi } from "../lib/notification-api";
+import { NOTIFICATION_STATE_CHANGED_EVENT } from "../lib/notification-events";
 import { getPortalHomePath, getPortalLabel, getPrimaryPortal, portalFromPath } from "../lib/roles";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { eventApi } from "../lib/event-api";
+const NOTIFICATION_FETCH_SIZE = 100;
+const isNotificationRead = (notification) => Boolean(notification?.readAt) || notification?.status === "READ";
 const publicTabs = [
     { name: "Home", path: "/", icon: Home },
     { name: "Events", path: "/events", icon: Calendar },
@@ -60,10 +63,28 @@ export function Navigation() {
             setUnreadCount(0);
             return;
         }
-        notificationApi
-            .list({ size: 5, unreadOnly: true })
-            .then((page) => setUnreadCount(page.totalElements))
-            .catch(() => setUnreadCount(0));
+        let cancelled = false;
+        const refreshUnreadCount = () => {
+            notificationApi
+                .list({ size: NOTIFICATION_FETCH_SIZE })
+                .then((page) => {
+                if (!cancelled) {
+                    setUnreadCount(page.content.filter((notification) => !isNotificationRead(notification)).length);
+                }
+            })
+                .catch(() => {
+                if (!cancelled) {
+                    setUnreadCount(0);
+                }
+            });
+        };
+        refreshUnreadCount();
+        const handleNotificationStateChanged = () => refreshUnreadCount();
+        window.addEventListener(NOTIFICATION_STATE_CHANGED_EVENT, handleNotificationStateChanged);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(NOTIFICATION_STATE_CHANGED_EVENT, handleNotificationStateChanged);
+        };
     }, [session]);
     useEffect(() => {
         const trimmedQuery = searchQuery.trim();

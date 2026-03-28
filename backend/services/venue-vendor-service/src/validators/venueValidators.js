@@ -111,12 +111,39 @@ const createBookingSchema = z.object({
       bookingStart: dateSchema,
       bookingEnd: dateSchema,
       hallIds: z.array(uuidSchema).optional().default([]),
-      vendorId: uuidSchema.optional()
+      vendorId: uuidSchema.optional(),
+      bookingOwnerId: uuidSchema.optional(),
+      bookingOwnerEmail: z.string().email().optional()
     })
     .refine((value) => value.bookingEnd > value.bookingStart, {
       message: "bookingEnd must be greater than bookingStart",
       path: ["bookingEnd"]
     })
+});
+
+const confirmVenueBookingPaymentSchema = z.object({
+  params: z.object({
+    bookingId: uuidSchema
+  }),
+  query: z.object({}).optional().default({}),
+  body: z.object({
+    paymentId: uuidSchema,
+    paymentReference: z.string().trim().min(1),
+    invoiceNumber: z.string().trim().optional(),
+    invoiceUrl: z.string().trim().url().optional(),
+    amount: z.coerce.number().nonnegative().optional(),
+    currency: z.string().trim().min(1).optional()
+  })
+});
+
+const cancelVenueBookingSchema = z.object({
+  params: z.object({
+    bookingId: uuidSchema
+  }),
+  query: z.object({}).optional().default({}),
+  body: z.object({
+    reason: z.string().trim().min(3).max(500).optional()
+  }).optional().default({})
 });
 
 module.exports = {
@@ -126,5 +153,7 @@ module.exports = {
   updateVenueSchema,
   venueIdParamSchema,
   checkAvailabilitySchema,
-  createBookingSchema
+  createBookingSchema,
+  confirmVenueBookingPaymentSchema,
+  cancelVenueBookingSchema
 };

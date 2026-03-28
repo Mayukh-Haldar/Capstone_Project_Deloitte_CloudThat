@@ -19,6 +19,24 @@ const parseResponse = async (response) => {
     }
     return response.json();
 };
+const createRequestHeaders = (headers, body, auth, session) => {
+    const mergedHeaders = { ...headers };
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+    const isLocalDevelopment = typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    if (body !== undefined && !isFormData) {
+        mergedHeaders["Content-Type"] = "application/json";
+    }
+    if (auth && session?.accessToken) {
+        mergedHeaders.Authorization = `Bearer ${session.accessToken}`;
+    }
+    if (auth && session?.user && isLocalDevelopment) {
+        mergedHeaders["x-user-id"] = session.user.id;
+        mergedHeaders["x-user-email"] = session.user.email;
+        mergedHeaders["x-user-roles"] = session.user.roles.join(",");
+    }
+    return { mergedHeaders, isFormData };
+};
 let refreshSessionPromise = null;
 export const refreshAuthSession = async () => {
     if (refreshSessionPromise) {
@@ -61,23 +79,9 @@ const shouldRetryAfterRefresh = (status, errorBody) => {
         errorBody?.code === "AUTH-1002" ||
         message.includes("insufficient permissions"));
 };
-export const request = async ({ url, method = "GET", body, headers = {}, auth = false, retryOnUnauthorized = true }) => {
+const sendRequest = async ({ url, method = "GET", body, headers = {}, auth = false, retryOnUnauthorized = true }) => {
     const session = getAuthSession();
-    const mergedHeaders = { ...headers };
-    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
-    const isLocalDevelopment = typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    if (body !== undefined && !isFormData) {
-        mergedHeaders["Content-Type"] = "application/json";
-    }
-    if (auth && session?.accessToken) {
-        mergedHeaders.Authorization = `Bearer ${session.accessToken}`;
-    }
-    if (auth && session?.user && isLocalDevelopment) {
-        mergedHeaders["x-user-id"] = session.user.id;
-        mergedHeaders["x-user-email"] = session.user.email;
-        mergedHeaders["x-user-roles"] = session.user.roles.join(",");
-    }
+    const { mergedHeaders, isFormData } = createRequestHeaders(headers, body, auth, session);
     const response = await fetch(url, {
         method,
         headers: mergedHeaders,
@@ -88,7 +92,7 @@ export const request = async ({ url, method = "GET", body, headers = {}, auth = 
         if (auth && retryOnUnauthorized && shouldRetryAfterRefresh(response.status, errorBody)) {
             const refreshed = await refreshAuthSession();
             if (refreshed?.accessToken) {
-                return request({
+                return sendRequest({
                     url,
                     method,
                     body,
@@ -104,6 +108,14 @@ export const request = async ({ url, method = "GET", body, headers = {}, auth = 
         const errorMessage = errorBody?.message || errorBody?.error || "Request failed";
         throw new ApiClientError(errorMessage, response.status, errorBody?.code, errorBody?.details);
     }
+    return response;
+};
+export const request = async (options) => {
+    const response = await sendRequest(options);
     const data = await parseResponse(response);
     return { data, headers: response.headers };
+};
+export const requestBlob = async (options) => {
+    const response = await sendRequest(options);
+    return { data: await response.blob(), headers: response.headers };
 };

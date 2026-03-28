@@ -1,9 +1,10 @@
-import { Calendar, ChevronDown, Clock3, MapPin, QrCode, Search, Ticket as TicketIcon, X } from "lucide-react";
+import { AlertTriangle, Calendar, ChevronDown, Clock3, MapPin, QrCode, Search, Ticket as TicketIcon, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { LazyLoadSentinel } from "../components/LazyLoadSentinel";
 import { PageNavigation } from "../components/PageNavigation";
 import { ticketingApi } from "../lib/ticketing-api";
+import { eventApi, isDisabledEvent } from "../lib/event-api";
 import { ApiClientError } from "../lib/http-client";
 import { getEventPlaceholderImage } from "../lib/placeholder-images";
 const PAGE_SIZE = 6;
@@ -12,6 +13,7 @@ export function Tickets() {
     const [registrations, setRegistrations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [eventStatusMap, setEventStatusMap] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const [searchDraft, setSearchDraft] = useState("");
     const [dateFilter, setDateFilter] = useState("all");
@@ -23,7 +25,22 @@ export function Tickets() {
             try {
                 const data = await ticketingApi.listMyRegistrations();
                 // Filter out cancelled and pending (failed payment) registrations
-                setRegistrations(data.filter((item) => item.status !== "CANCELED" && item.status !== "PENDING"));
+                const active = data.filter((item) => item.status !== "CANCELED" && item.status !== "PENDING");
+                setRegistrations(active);
+                // Fetch event statuses for all unique event IDs so we can show disabled notices
+                const uniqueEventIds = [...new Set(active.map((item) => item.eventId))];
+                const statusEntries = await Promise.all(
+                    uniqueEventIds.map(async (eventId) => {
+                        try {
+                            const detail = await eventApi.getEvent(eventId);
+                            return [eventId, detail.event?.status ?? detail.status ?? ""];
+                        }
+                        catch {
+                            return [eventId, ""];
+                        }
+                    })
+                );
+                setEventStatusMap(Object.fromEntries(statusEntries));
             }
             catch (err) {
                 setError(err instanceof ApiClientError ? err.message : "Unable to load your ticket wallet.");
@@ -159,12 +176,24 @@ export function Tickets() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {pagedRegistrations.map((registration, index) => (<article key={registration.registrationId} className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-[#0f1e3d]/80">
-                <img src={getEventPlaceholderImage(registration.registrationId)} alt={registration.eventTitle} loading="lazy" className="h-40 w-full object-cover"/>
+            {pagedRegistrations.map((registration, index) => {
+              const eventStatus = eventStatusMap[registration.eventId] || "";
+              const eventDisabled = isDisabledEvent(eventStatus);
+              return (<article key={registration.registrationId} className={`flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm ${eventDisabled ? "border-amber-300 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-900/10" : "border-slate-200 bg-white/90 dark:border-white/10 dark:bg-[#0f1e3d]/80"}`}>
+                <img src={getEventPlaceholderImage(registration.registrationId)} alt={registration.eventTitle} loading="lazy" className={`h-40 w-full object-cover ${eventDisabled ? "opacity-60 grayscale" : ""}`}/>
                 <div className="flex flex-1 flex-col gap-3 p-4">
+                  {eventDisabled && (
+                    <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs dark:border-amber-500/30 dark:bg-amber-500/10">
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"/>
+                      <div>
+                        <p className="font-semibold text-amber-800 dark:text-amber-200">This event has been disabled by the owner.</p>
+                        <p className="mt-0.5 text-amber-700 dark:text-amber-300">Please email the event organizer for refund or further information.</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-3">
                     <div className="min-h-7">
-                      {pageStart + index === 0 && (<span className="inline-flex rounded-full bg-[#1132d4]/10 px-3 py-1 text-xs font-semibold text-[#1132d4]">Next Event</span>)}
+                      {!eventDisabled && pageStart + index === 0 && (<span className="inline-flex rounded-full bg-[#1132d4]/10 px-3 py-1 text-xs font-semibold text-[#1132d4]">Next Event</span>)}
                     </div>
                     <h2 className="line-clamp-2 min-h-[3.5rem] text-xl font-bold">{registration.eventTitle}</h2>
                     <p className="inline-flex min-h-10 items-start gap-2 text-sm text-slate-600 dark:text-slate-300"><Calendar className="mt-0.5 size-4 shrink-0"/><span>{formatDate(registration.eventStartTime)}</span></p>
@@ -179,7 +208,8 @@ export function Tickets() {
                     <QrCode className="size-4"/>View Ticket Pass
                   </Link>
                 </div>
-              </article>))}
+              </article>);
+            })}
           </div>
 
             <PageNavigation currentPage={safeCurrentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>

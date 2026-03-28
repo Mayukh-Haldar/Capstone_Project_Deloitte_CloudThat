@@ -35,6 +35,7 @@ public class PaymentService {
     private final RazorpayClient razorpayClient;
     private final NotificationClient notificationClient;
     private final TicketingClient ticketingClient;
+    private final VenueBookingClient venueBookingClient;
     private final InvoiceAssetService invoiceAssetService;
     private final com.eventzen.finance.config.RazorpayProperties razorpayProperties;
 
@@ -44,6 +45,7 @@ public class PaymentService {
             RazorpayClient razorpayClient,
             NotificationClient notificationClient,
             TicketingClient ticketingClient,
+            VenueBookingClient venueBookingClient,
             InvoiceAssetService invoiceAssetService,
             com.eventzen.finance.config.RazorpayProperties razorpayProperties
     ) {
@@ -52,6 +54,7 @@ public class PaymentService {
         this.razorpayClient = razorpayClient;
         this.notificationClient = notificationClient;
         this.ticketingClient = ticketingClient;
+        this.venueBookingClient = venueBookingClient;
         this.invoiceAssetService = invoiceAssetService;
         this.razorpayProperties = razorpayProperties;
     }
@@ -63,6 +66,7 @@ public class PaymentService {
         payment.setEventId(request.eventId());
         payment.setEventName(request.eventName());
         payment.setRegistrationId(request.registrationId());
+        payment.setVenueBookingId(request.venueBookingId());
         payment.setAmount(request.amount());
         payment.setCurrency(request.currency().toUpperCase(Locale.ROOT));
         payment.setPaymentMethod(request.paymentMethod());
@@ -98,9 +102,9 @@ public class PaymentService {
         }
         Payment savedPayment = paymentRepository.save(payment);
         if (savedPayment.getPaymentStatus() == PaymentStatus.SUCCEEDED) {
-            confirmTicketingRegistration(savedPayment);
             savedPayment = ensureInvoiceStored(savedPayment);
             savedPayment = normalizeStoredInvoiceUrl(savedPayment);
+            confirmLinkedResource(savedPayment);
             sendPaymentSuccessNotification(savedPayment);
         }
         return financeMapper.toPaymentResponse(savedPayment);
@@ -125,9 +129,9 @@ public class PaymentService {
         payment.setGatewayPayload("{\"verification\":\"passed\"}");
         Payment savedPayment = paymentRepository.save(payment);
         if (previousStatus != PaymentStatus.SUCCEEDED) {
-            confirmTicketingRegistration(savedPayment);
             savedPayment = ensureInvoiceStored(savedPayment);
             savedPayment = normalizeStoredInvoiceUrl(savedPayment);
+            confirmLinkedResource(savedPayment);
             sendPaymentSuccessNotification(savedPayment);
         }
         return financeMapper.toPaymentResponse(savedPayment);
@@ -145,9 +149,9 @@ public class PaymentService {
         }
         Payment savedPayment = paymentRepository.save(payment);
         if (request.status() == PaymentStatus.SUCCEEDED && previousStatus != PaymentStatus.SUCCEEDED) {
-            confirmTicketingRegistration(savedPayment);
             savedPayment = ensureInvoiceStored(savedPayment);
             savedPayment = normalizeStoredInvoiceUrl(savedPayment);
+            confirmLinkedResource(savedPayment);
             sendPaymentSuccessNotification(savedPayment);
         }
         return financeMapper.toPaymentResponse(savedPayment);
@@ -184,12 +188,13 @@ public class PaymentService {
         return invoicePdf;
     }
 
-    private void confirmTicketingRegistration(Payment payment) {
-        if (payment.getRegistrationId() == null) {
-            return;
+    private void confirmLinkedResource(Payment payment) {
+        if (payment.getRegistrationId() != null) {
+            ticketingClient.confirmRegistrationPayment(payment.getRegistrationId());
         }
-
-        ticketingClient.confirmRegistrationPayment(payment.getRegistrationId());
+        if (payment.getVenueBookingId() != null) {
+            venueBookingClient.confirmVenueBookingPayment(payment);
+        }
     }
 
     private void sendPaymentSuccessNotification(Payment payment) {
@@ -202,18 +207,24 @@ public class PaymentService {
         metadata.put("eventId", payment.getEventId());
         metadata.put("eventName", payment.getEventName());
         metadata.put("registrationId", payment.getRegistrationId());
+        metadata.put("venueBookingId", payment.getVenueBookingId());
         metadata.put("amount", payment.getAmount());
         metadata.put("currency", payment.getCurrency());
         metadata.put("gatewayReference", payment.getGatewayReference());
         metadata.put("invoiceNumber", payment.getInvoiceNumber());
         metadata.put("invoiceUrl", payment.getInvoiceUrl());
 
+        String subjectPrefix = payment.getVenueBookingId() != null ? "Venue payment received - " : "Thank you for your purchase - ";
+        String bodyPrefix = payment.getVenueBookingId() != null
+                ? "We have received your venue booking payment for "
+                : "Thank you for your purchase. We have received your payment for ";
+
         notificationClient.sendInAppNotification(
                 payment.getCreatedByUserId(),
                 payment.getCustomerEmail(),
                 "payment.received",
-                                "Thank you for your purchase - " + payment.getEventName(),
-                                "Thank you for your purchase. We have received your payment for " + payment.getEventName()
+                                subjectPrefix + payment.getEventName(),
+                                bodyPrefix + payment.getEventName()
                                                 + ". Payment reference: " + payment.getGatewayReference() + ".",
                                 buildPaymentSuccessHtml(payment),
                 metadata

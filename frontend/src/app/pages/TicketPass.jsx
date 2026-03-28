@@ -6,11 +6,24 @@ import { ApiClientError } from "../lib/http-client";
 import { getDisplayQrDataUri } from "../lib/ticket-pass";
 import { getEventPlaceholderImage } from "../lib/placeholder-images";
 const formatDate = (value) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const getFileNameFromDisposition = (headerValue, fallback) => {
+    if (!headerValue) {
+        return fallback;
+    }
+    const utf8Match = headerValue.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+        return decodeURIComponent(utf8Match[1]);
+    }
+    const asciiMatch = headerValue.match(/filename="?([^";]+)"?/i);
+    return asciiMatch?.[1] || fallback;
+};
 export function TicketPass() {
     const { registrationId } = useParams();
     const [registration, setRegistration] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
     const [error, setError] = useState("");
+    const [downloadError, setDownloadError] = useState("");
     useEffect(() => {
         const load = async () => {
             if (!registrationId) {
@@ -39,12 +52,31 @@ export function TicketPass() {
         void load();
     }, [registrationId]);
     const displayQrDataUri = useMemo(() => (registration ? getDisplayQrDataUri(registration.ticket.qrCodeSvgDataUri) : ""), [registration]);
-    const downloadPass = () => {
-        if (registration?.ticket?.ticketPassUrl) {
-            window.open(registration.ticket.ticketPassUrl, "_blank", "noopener,noreferrer");
+    const downloadPass = async () => {
+        if (!registration) {
             return;
         }
-        window.print();
+        try {
+            setDownloading(true);
+            setDownloadError("");
+            const response = await ticketingApi.downloadRegistrationTicketPass(registration.registrationId);
+            const fallbackName = `${registration.ticket.ticketNumber.replaceAll(/[^A-Za-z0-9-]/g, "-")}.pdf`;
+            const fileName = getFileNameFromDisposition(response.headers.get("content-disposition"), fallbackName);
+            const objectUrl = window.URL.createObjectURL(response.data);
+            const anchor = document.createElement("a");
+            anchor.href = objectUrl;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+        }
+        catch (err) {
+            setDownloadError(err instanceof ApiClientError ? err.message : "Unable to download ticket pass.");
+        }
+        finally {
+            setDownloading(false);
+        }
     };
     if (loading) {
         return <section className="min-h-screen px-6 py-10 text-sm text-slate-500">Loading ticket pass...</section>;
@@ -65,11 +97,12 @@ export function TicketPass() {
             <ArrowLeft className="size-4"/>
             Back to wallet
           </Link>
-          <button type="button" onClick={downloadPass} className="inline-flex items-center gap-2 rounded-xl bg-[#1132d4] px-4 py-2.5 text-sm font-semibold text-white shadow-sm">
+          <button type="button" onClick={() => void downloadPass()} disabled={downloading} className="inline-flex items-center gap-2 rounded-xl bg-[#1132d4] px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:cursor-wait disabled:opacity-70">
             <Download className="size-4"/>
-            Download PDF
+            {downloading ? "Generating PDF..." : "Download PDF"}
           </button>
         </div>
+        {downloadError ? <p className="mb-4 text-sm font-medium text-red-600 print:hidden">{downloadError}</p> : null}
 
         <div className="mx-auto max-w-[980px] overflow-hidden rounded-[36px] border border-black/10 bg-white/92 shadow-[0_24px_64px_rgba(15,23,42,0.16)] backdrop-blur dark:border-white/10 dark:bg-white/95 dark:shadow-[0_30px_80px_rgba(4,12,30,0.45)] print:max-w-none print:min-h-[250mm] print:break-inside-avoid print:rounded-[28px] print:border-[#cfdcff] print:bg-white print:shadow-[0_18px_48px_rgba(17,50,212,0.16)]" style={{ WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
           <div className="relative">

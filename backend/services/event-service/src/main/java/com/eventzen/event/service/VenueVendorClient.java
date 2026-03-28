@@ -49,7 +49,16 @@ public class VenueVendorClient {
         }
     }
 
-    public String createBooking(String authorization, AuthenticatedUser actor, String eventId, VenueBookingRequest request, OffsetDateTime startTime, OffsetDateTime endTime) {
+    public BookingResult createBooking(
+            String authorization,
+            AuthenticatedUser actor,
+            String eventId,
+            java.util.UUID organizerId,
+            String organizerEmail,
+            VenueBookingRequest request,
+            OffsetDateTime startTime,
+            OffsetDateTime endTime
+    ) {
         try {
             BookingResponse response = restClient.post()
                     .uri(properties.venueVendorBaseUrl() + "/api/v1/venues/" + request.venueId() + "/book")
@@ -57,13 +66,26 @@ public class VenueVendorClient {
                     .header("x-user-id", actor.id().toString())
                     .header("x-user-email", actor.email())
                     .header("x-user-roles", String.join(",", actor.roles()))
-                    .body(new CreateBookingRequest(eventId, startTime.toString(), endTime.toString(), request.hallIds() == null ? List.of() : request.hallIds()))
+                    .body(new CreateBookingRequest(
+                            eventId,
+                            startTime.toString(),
+                            endTime.toString(),
+                            request.hallIds() == null ? List.of() : request.hallIds(),
+                            organizerId == null ? null : organizerId.toString(),
+                            organizerId == null ? null : organizerId.toString(),
+                            organizerEmail
+                    ))
                     .retrieve()
                     .body(BookingResponse.class);
             if (response == null || response.bookingId() == null) {
                 throw new EventServiceException(HttpStatus.BAD_GATEWAY, "EVENT-502", "Venue booking failed");
             }
-            return response.bookingId();
+            return new BookingResult(
+                    response.bookingId(),
+                    response.paymentStatus(),
+                    response.paymentAmount(),
+                    response.paymentCurrency()
+            );
         } catch (RestClientException exception) {
             throw new EventServiceException(HttpStatus.BAD_GATEWAY, "EVENT-502", "Venue booking failed");
         }
@@ -72,9 +94,23 @@ public class VenueVendorClient {
     private record AvailabilityResponse(String venueId, boolean isAvailable, List<Object> conflicts) {
     }
 
-    private record CreateBookingRequest(String eventId, String bookingStart, String bookingEnd, List<String> hallIds) {
+    private record CreateBookingRequest(
+            String eventId,
+            String bookingStart,
+            String bookingEnd,
+            List<String> hallIds,
+            String vendorId,
+            String bookingOwnerId,
+            String bookingOwnerEmail
+    ) {
     }
 
-    private record BookingResponse(String bookingId) {
+    public record BookingResult(String bookingId, String paymentStatus, java.math.BigDecimal paymentAmount, String paymentCurrency) {
+        public boolean isPaymentPending() {
+            return "PENDING".equalsIgnoreCase(paymentStatus);
+        }
+    }
+
+    private record BookingResponse(String bookingId, String paymentStatus, java.math.BigDecimal paymentAmount, String paymentCurrency) {
     }
 }

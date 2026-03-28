@@ -34,7 +34,7 @@ export function PortalLayout() {
     useEffect(() => {
         setMounted(true);
     }, []);
-    return (<section className="relative flex min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_top_left,rgba(122,170,255,0.26)_0%,rgba(232,240,253,0.96)_34%,rgba(228,235,250,1)_68%,rgba(241,245,252,1)_100%)] text-slate-900 dark:bg-[radial-gradient(ellipse_at_top_left,#243a7e_0%,#111d40_36%,#091126_100%)] dark:text-foreground">
+    return (<section className="relative flex h-[calc(100vh-4rem)] overflow-hidden bg-[radial-gradient(ellipse_at_top_left,rgba(122,170,255,0.26)_0%,rgba(232,240,253,0.96)_34%,rgba(228,235,250,1)_68%,rgba(241,245,252,1)_100%)] text-slate-900 dark:bg-[radial-gradient(ellipse_at_top_left,#243a7e_0%,#111d40_36%,#091126_100%)] dark:text-foreground">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden select-none">
         <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#d6e5ff]/50 via-[#dde8ff]/18 to-transparent dark:from-[#152558]/46 dark:via-[#0f1940]/14 dark:to-transparent"/>
         <div className="absolute -top-[16%] -left-[8%] h-[560px] w-[560px] rounded-full bg-blue-200/[0.18] blur-[150px] dark:bg-[#3150c8]/[0.16]"/>
@@ -43,7 +43,7 @@ export function PortalLayout() {
 
       {sidebarOpen && (<div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)}/>)}
 
-      <aside className={`fixed top-16 bottom-0 left-0 z-40 shrink-0 overflow-hidden border-r border-black/10 bg-white/58 backdrop-blur-2xl dark:border-border dark:bg-[#0d1429]/58 lg:sticky lg:top-16${mounted ? " transition-[width] duration-300 ease-in-out" : ""} ${sidebarOpen ? "w-[320px]" : "w-0 border-r-0"}`}>
+      <aside className={`fixed top-16 bottom-0 left-0 z-40 shrink-0 overflow-hidden border-r border-black/10 bg-white/58 backdrop-blur-2xl dark:border-border dark:bg-[#0d1429]/58 lg:relative lg:top-auto lg:bottom-auto lg:left-auto lg:z-0 lg:h-full${mounted ? " transition-[width] duration-300 ease-in-out" : ""} ${sidebarOpen ? "w-[320px]" : "w-0 border-r-0"}`}>
         <div className="flex h-full w-[320px] flex-col overflow-y-auto p-5">
           <div className="rounded-2xl border border-slate-200 bg-white/60 p-4 dark:border-white/10 dark:bg-white/5">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#1132d4] dark:text-[#7aa3ff]">
@@ -80,7 +80,7 @@ export function PortalLayout() {
         </div>
       </aside>
 
-      <div className="relative min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1 overflow-y-auto">
         <Outlet />
       </div>
     </section>);

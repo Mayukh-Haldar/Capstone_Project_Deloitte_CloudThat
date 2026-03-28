@@ -16,6 +16,7 @@ import com.eventzen.finance.service.ExpenseService;
 import com.eventzen.finance.service.FinancialReportService;
 import com.eventzen.finance.service.PaymentService;
 import com.eventzen.finance.service.TicketingClient;
+import com.eventzen.finance.service.VenueBookingClient;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -64,6 +65,17 @@ class FinanceServiceIntegrationTest {
                 }
             };
         }
+
+        @Bean
+        @Primary
+        VenueBookingClient venueBookingClient() {
+            return new VenueBookingClient(new com.eventzen.finance.config.VenueVendorServiceProperties("http://localhost:8083", "test-key")) {
+                @Override
+                public void confirmVenueBookingPayment(com.eventzen.finance.model.Payment payment) {
+                    // Keep integration tests self-contained instead of requiring venue-vendor-service.
+                }
+            };
+        }
     }
 
     @Test
@@ -99,6 +111,7 @@ class FinanceServiceIntegrationTest {
                 eventId,
                 "EventZen Summit",
                 UUID.randomUUID(),
+                null,
                 new BigDecimal("799.00"),
                 "INR",
                 PaymentMethod.CARD,
@@ -153,6 +166,7 @@ class FinanceServiceIntegrationTest {
                 UUID.randomUUID(),
                 "Gateway Disabled Event",
                 UUID.randomUUID(),
+                null,
                 new BigDecimal("199.00"),
                 "INR",
                 PaymentMethod.CARD,

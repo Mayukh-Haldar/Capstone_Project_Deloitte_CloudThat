@@ -12,7 +12,7 @@ export function RootLayout() {
     const isPortalWorkspaceRoute = path.startsWith("/admin") || path.startsWith("/vendor") || path.startsWith("/customer");
     const hideNavigation = path === "/auth" || isTicketPassRoute;
     const hideFooter = path === "/auth" || isTicketPassRoute || isPortalWorkspaceRoute;
-    return (<div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#f3f5f9] dark:bg-[#070d1f] print:block print:min-h-0 print:bg-white">
+    return (<div className="relative flex min-h-screen flex-col [overflow-x:clip] bg-[#f3f5f9] dark:bg-[#070d1f] print:block print:min-h-0 print:bg-white">
       <AuthSessionMonitor />
 
       {/* Ambient gradient orbs — atmospheric backdrop for all pages */}

@@ -1,0 +1,93 @@
+{
+  "title": "AI Governance Bootcamp 2026",
+  "eventType": "Workshop",
+  "category": "TECH",
+  "startTime": "2026-07-09T10:00",
+  "endTime": "2026-07-09T16:30",
+  "expectedAttendees": 140,
+  "capacity": 160,
+  "proposedBudget": 540000,
+  "tags": [
+    "ai-governance",
+    "risk",
+    "compliance",
+    "platform"
+  ],
+  "description": "A practical workshop for AI product, compliance, and platform teams covering governance operating models, responsible AI checkpoints, and enterprise rollout controls.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80",
+  "venueName": "Riverside Culture Yard",
+  "agendaItems": [
+    {
+      "agendaTitle": "Registration and Networking",
+      "type": "Check-in",
+      "startTime": "2026-07-09T10:00",
+      "endTime": "2026-07-09T10:20",
+      "description": "Check-in, coffee, and participant networking."
+    },
+    {
+      "agendaTitle": "Responsible AI Governance Foundations",
+      "type": "Workshop",
+      "startTime": "2026-07-09T10:20",
+      "endTime": "2026-07-09T11:30",
+      "description": "Core governance principles, control points, and executive accountability."
+    },
+    {
+      "agendaTitle": "Policy to Production Exercise",
+      "type": "Lab",
+      "startTime": "2026-07-09T13:00",
+      "endTime": "2026-07-09T14:15",
+      "description": "Hands-on exercise mapping policy decisions into release workflows and model gates."
+    },
+    {
+      "agendaTitle": "Closing Q and A",
+      "type": "Closing",
+      "startTime": "2026-07-09T15:45",
+      "endTime": "2026-07-09T16:15",
+      "description": "Open Q and A and action planning for attendees."
+    }
+  ],
+  "sessions": [
+    {
+      "title": "Responsible AI Governance Foundations",
+      "speakerName": "Nisha Verma",
+      "speakerRole": "Head of AI Risk",
+      "speakerCompany": "Meridian Trust",
+      "room": "River Deck",
+      "type": "Workshop",
+      "startTime": "2026-07-09T10:20",
+      "endTime": "2026-07-09T11:30",
+      "capacity": 160,
+      "description": "Frameworks for policy ownership, controls, and escalation paths."
+    },
+    {
+      "title": "Policy to Production Exercise",
+      "speakerName": "Amit Deshpande",
+      "speakerRole": "Principal Architect",
+      "speakerCompany": "StackHarbor",
+      "room": "Craft Court",
+      "type": "Lab",
+      "startTime": "2026-07-09T13:00",
+      "endTime": "2026-07-09T14:15",
+      "capacity": 80,
+      "description": "Lab-style walkthrough translating governance rules into engineering delivery checkpoints."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "name": "Workshop Pass",
+      "tierCode": "GENERAL",
+      "price": 1800,
+      "quantity": 120,
+      "maxPerOrder": 5,
+      "description": "Full workshop access, workbook, and refreshments."
+    },
+    {
+      "name": "Leadership Seat",
+      "tierCode": "VIP",
+      "price": 3200,
+      "quantity": 40,
+      "maxPerOrder": 2,
+      "description": "Front-row seating, lunch table access, and post-session roundtable."
+    }
+  ]
+}

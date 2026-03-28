@@ -5,6 +5,7 @@ import com.eventzen.event.dto.ApiMessageResponse;
 import com.eventzen.event.dto.CreateEventRequest;
 import com.eventzen.event.dto.CreateSessionRequest;
 import com.eventzen.event.dto.EventDetailResponse;
+import com.eventzen.event.dto.EventEnableRequestResponse;
 import com.eventzen.event.dto.EventSummaryResponse;
 import com.eventzen.event.dto.PagedResponse;
 import com.eventzen.event.dto.ReorderAgendaRequest;
@@ -17,8 +18,11 @@ import com.eventzen.event.model.EventStatus;
 import com.eventzen.event.security.AuthenticatedUser;
 import com.eventzen.event.service.EventAssetService;
 import com.eventzen.event.service.EventService;
+import com.eventzen.event.config.EventClientProperties;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -47,10 +51,12 @@ public class EventController {
 
     private final EventService eventService;
     private final EventAssetService eventAssetService;
+    private final EventClientProperties eventClientProperties;
 
-    public EventController(EventService eventService, EventAssetService eventAssetService) {
+    public EventController(EventService eventService, EventAssetService eventAssetService, EventClientProperties eventClientProperties) {
         this.eventService = eventService;
         this.eventAssetService = eventAssetService;
+        this.eventClientProperties = eventClientProperties;
     }
 
     @PostMapping
@@ -89,9 +95,10 @@ public class EventController {
     EventDetailResponse updateEvent(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateEventRequest request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @AuthenticationPrincipal AuthenticatedUser actor
     ) {
-        return eventService.updateEvent(id, request, actor);
+        return eventService.updateEvent(id, request, actor, authorization);
     }
 
     @PatchMapping("/{id}/status")
@@ -110,6 +117,126 @@ public class EventController {
         eventService.archiveEvent(id);
         return new ApiMessageResponse("Event archived successfully");
     }
+
+    @PostMapping("/{id}/disable")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZER')")
+    EventDetailResponse disableEvent(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestHeader(org.springframework.http.HttpHeaders.AUTHORIZATION) String authorization
+    ) {
+        return eventService.disableEvent(id, actor, authorization);
+    }
+
+    @PostMapping("/{id}/enable")
+    @PreAuthorize("hasAnyRole('ADMIN','ORGANIZER')")
+    EventDetailResponse enableEvent(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestHeader(org.springframework.http.HttpHeaders.AUTHORIZATION) String authorization
+    ) {
+        return eventService.enableEvent(id, actor, authorization);
+    }
+
+    @PostMapping("/{id}/request-enable")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    EventEnableRequestResponse requestEnableEvent(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestBody(required = false) NoteBody body
+    ) {
+        return eventService.requestEnableEvent(id, actor, body != null ? body.note() : null);
+    }
+
+    @GetMapping("/enable-requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    List<EventEnableRequestResponse> listPendingEnableRequests() {
+        return eventService.listPendingEnableRequests();
+    }
+
+    @PostMapping("/enable-requests/{requestId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    EventDetailResponse approveEnableRequest(
+            @PathVariable UUID requestId,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestHeader(org.springframework.http.HttpHeaders.AUTHORIZATION) String authorization,
+            @RequestBody(required = false) NoteBody body
+    ) {
+        return eventService.approveEnableRequest(requestId, actor, authorization, body != null ? body.note() : null);
+    }
+
+    @PostMapping("/enable-requests/{requestId}/reject")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    void rejectEnableRequest(
+            @PathVariable UUID requestId,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestBody(required = false) NoteBody body
+    ) {
+        eventService.rejectEnableRequest(requestId, actor, body != null ? body.note() : null);
+    }
+
+    @PostMapping("/{id}/approval/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    EventDetailResponse approveEventRequest(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestHeader(org.springframework.http.HttpHeaders.AUTHORIZATION) String authorization,
+            @RequestBody(required = false) ApprovalReviewBody body
+    ) {
+        return eventService.approveEventRequest(
+                id,
+                actor,
+                authorization,
+                body != null ? body.approvedBudget() : null,
+                body != null ? body.note() : null);
+    }
+
+    @PostMapping("/{id}/approval/request-changes")
+    @PreAuthorize("hasRole('ADMIN')")
+    EventDetailResponse requestEventChanges(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestBody(required = false) ApprovalReviewBody body
+    ) {
+        return eventService.requestEventRevision(id, actor, body != null ? body.note() : null);
+    }
+
+    @PostMapping("/{id}/approval/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    EventDetailResponse rejectEventRequest(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestBody(required = false) ApprovalReviewBody body
+    ) {
+        return eventService.rejectEventRequest(id, actor, body != null ? body.note() : null);
+    }
+
+    @PostMapping("/{id}/approval/resubmit")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    EventDetailResponse resubmitEventRequest(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal AuthenticatedUser actor
+    ) {
+        return eventService.resubmitEventRequest(id, actor);
+    }
+
+    @PostMapping("/internal/venue-bookings/{bookingId}/cancelled")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void handleVenueBookingCancelled(
+            @PathVariable String bookingId,
+            @RequestHeader("x-internal-service-key") String internalServiceKey,
+            @RequestBody(required = false) VenueCancellationBody body
+    ) {
+        if (!eventClientProperties.notificationInternalServiceKey().equals(internalServiceKey)) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid internal service key");
+        }
+        eventService.handleVenueBookingCancelled(bookingId, body != null ? body.reason() : null);
+    }
+
+    private record NoteBody(String note) {}
+    private record ApprovalReviewBody(@DecimalMin("0.0") BigDecimal approvedBudget, String note) {}
+    private record VenueCancellationBody(String reason) {}
 
     @PostMapping(value = "/uploads/banner-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)

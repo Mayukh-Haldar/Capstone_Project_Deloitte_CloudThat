@@ -1,7 +1,7 @@
-import { Calendar, MapPin, Users, Info, Minus, Plus, CheckCircle2, HelpCircle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Calendar, MapPin, Users, Info, Minus, Plus, CheckCircle2, HelpCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { eventApi, getEventStatusLabel, isRegistrationOpen } from "../lib/event-api";
+import { eventApi, getEventStatusLabel, isRegistrationOpen, isDisabledEvent } from "../lib/event-api";
 import { ticketingApi } from "../lib/ticketing-api";
 import { ApiClientError } from "../lib/http-client";
 import { useAuthSession } from "../lib/auth-storage";
@@ -37,6 +37,7 @@ export function EventDetails() {
     const [existingRegistrationId, setExistingRegistrationId] = useState(null);
     const [brokenSpeakerPhotos, setBrokenSpeakerPhotos] = useState({});
     const [selectedTickets, setSelectedTickets] = useState({});
+    useEffect(() => { window.scrollTo(0, 0); }, [id]);
     useEffect(() => {
         if (!id)
             return;
@@ -199,10 +200,13 @@ export function EventDetails() {
         return <section className="min-h-screen p-8 text-sm text-red-600 flex items-center justify-center">{error || "Event not found."}</section>;
     }
     const event = eventDetail.event;
-    const canRegister = isRegistrationOpen(event.status);
+    const canRegister = isRegistrationOpen(event.status) && !isDisabledEvent(event.status);
     const registrationBlockedReason = (() => {
         if (canRegister) {
             return "";
+        }
+        if (event.status === "DISABLED_BY_VENDOR" || event.status === "DISABLED_BY_ADMIN") {
+            return "Registration is unavailable because this event has been disabled.";
         }
         if (event.status === "PUBLISHED") {
             return "Registration has not opened yet for this published event.";
@@ -221,10 +225,11 @@ export function EventDetails() {
         }
         return `Registration is unavailable while the event is in ${getEventStatusLabel(event.status).toLowerCase()}.`;
     })();
-    // Capacity calculations
-    const capacity = event.capacity || 100;
-    const pctFilled = eventDetail.registrationUtilizationPercent || 0;
-    const attendingCount = Math.round((pctFilled / 100) * capacity);
+    // Capacity calculations — derived from live ticketing data
+    const totalCapacity = ticketTypes.reduce((sum, tt) => sum + tt.totalQuantity, 0) || event.capacity || 0;
+    const bookedCount = ticketTypes.reduce((sum, tt) => sum + (tt.totalQuantity - tt.availableQuantity), 0);
+    const pctFilled = totalCapacity > 0 ? Math.min(100, Math.round((bookedCount / totalCapacity) * 100)) : 0;
+    const attendingCount = bookedCount;
     // Group agenda items by date
     const agendaByDate = (eventDetail.agendaItems || []).reduce((acc, item) => {
         const dateKey = new Date(item.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -237,6 +242,22 @@ export function EventDetails() {
     const encodedAddress = encodeURIComponent(event.venueCity ? `${event.venueName}, ${event.venueCity}` : "San Francisco, CA");
     return (<section className="min-h-screen bg-slate-50 py-10 dark:bg-[#0a0f1d] dark:text-slate-100 text-slate-900 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Link to="/events" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4] dark:text-[#7aa3ff]">
+          <ArrowLeft className="size-4" />
+          Back to all events
+        </Link>
+
+        {isDisabledEvent(event.status) && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="font-semibold text-amber-800 dark:text-amber-200">This event has been disabled by the owner.</p>
+              <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                Registration and ticketing are currently unavailable. If you have already purchased a ticket, please email the event organizer for refund or further information.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="grid gap-10 lg:grid-cols-[2fr_1fr]">
           
           {/* Left Column */}
@@ -283,9 +304,14 @@ export function EventDetails() {
                 <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
                   <div className="h-full bg-blue-600 dark:bg-[#1132d4] rounded-full transition-all duration-500" style={{ width: `${pctFilled}%` }}/>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  <Info className="size-4"/>
-                  Limited seats remaining. Reserve yours today!
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <Info className="size-4"/>
+                    {totalCapacity - bookedCount > 0
+                      ? `${(totalCapacity - bookedCount).toLocaleString()} of ${totalCapacity.toLocaleString()} seats remaining`
+                      : "Sold out — join the waitlist"}
+                  </span>
+                  <span>{bookedCount.toLocaleString()} booked</span>
                 </div>
               </div>
             </div>
@@ -350,16 +376,16 @@ export function EventDetails() {
               <h2 className="text-2xl font-bold">Venue</h2>
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:bg-[#0f172e] dark:border-white/10">
                 <div className="h-[250px] w-full bg-slate-200 dark:bg-slate-800 relative">
-                  <iframe width="100%" height="100%" style={{ border: 0 }} loading="lazy" allowFullScreen referrerPolicy="no-referrer-when-downgrade" src={`https://www.openstreetmap.org/export/embed.html?bbox=-180,-90,180,90&layer=mapnik&marker=${encodedAddress}`}/>
-                  {/* Better styled overlay addressing actual location */}
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-4" style={{ backdropFilter: "blur(2px)", backgroundColor: "rgba(255,255,255,0.2)" }}>
-                    <div className="bg-white dark:bg-[#0f172e] shadow-xl p-3 pr-4 rounded-xl flex items-center gap-3 border border-slate-200 dark:border-white/10 animate-in fade-in zoom-in duration-500 pointer-events-auto">
-                      <div className="rounded-full bg-blue-600 p-2 text-white shadow-md">
-                        <MapPin className="size-5"/>
-                      </div>
-                      <div className="font-bold">{event.venueName || "Venue Location"}</div>
-                    </div>
-                  </div>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`}
+                    title={`Map showing ${event.venueName || "event venue"}`}
+                  />
                 </div>
                 <div className="flex items-center justify-between p-5">
                   <div>

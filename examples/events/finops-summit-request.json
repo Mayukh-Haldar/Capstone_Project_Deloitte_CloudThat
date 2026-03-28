@@ -1,0 +1,125 @@
+{
+  "title": "Future of FinOps Summit 2026",
+  "eventType": "Conference",
+  "categoryId": "50000000-0000-0000-0000-000000000002",
+  "startTime": "2026-06-18T09:00",
+  "endTime": "2026-06-18T18:30",
+  "expectedAttendees": 420,
+  "capacity": 420,
+  "estimatedBudget": 1850000,
+  "tags": [
+    "finops",
+    "cloud-cost",
+    "enterprise",
+    "ai",
+    "governance"
+  ],
+  "description": "A one-day leadership summit for finance, cloud, and platform teams focused on FinOps governance, AI-era cost controls, unit economics, forecasting, and executive operating models.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80",
+  "venueBooking": {
+    "venueId": "90000000-0000-0000-0000-000000000003",
+    "venueName": "Lotus Knowledge Arena",
+    "venueCity": "Hyderabad"
+  },
+  "agendaItems": [
+    {
+      "agendaTitle": "Welcome and Registration",
+      "type": "Check-in",
+      "startTime": "2026-06-18T09:00",
+      "endTime": "2026-06-18T09:30",
+      "description": "Attendee check-in, badge pickup, coffee, and networking."
+    },
+    {
+      "agendaTitle": "Opening Keynote: FinOps in the AI Era",
+      "type": "Keynote",
+      "startTime": "2026-06-18T09:30",
+      "endTime": "2026-06-18T10:15",
+      "description": "How AI workloads are changing cloud economics, governance, and executive decision-making."
+    },
+    {
+      "agendaTitle": "Executive Panel: Budget Discipline Without Slowing Innovation",
+      "type": "Panel",
+      "startTime": "2026-06-18T10:30",
+      "endTime": "2026-06-18T11:20",
+      "description": "CFOs and platform leaders discuss budget controls, chargeback models, and team accountability."
+    },
+    {
+      "agendaTitle": "Workshop: Building a FinOps Operating Model",
+      "type": "Workshop",
+      "startTime": "2026-06-18T13:30",
+      "endTime": "2026-06-18T14:45",
+      "description": "Interactive workshop covering ownership, KPIs, cost reviews, and tooling design."
+    },
+    {
+      "agendaTitle": "Closing Session: From Cost Visibility to Action",
+      "type": "Closing",
+      "startTime": "2026-06-18T17:30",
+      "endTime": "2026-06-18T18:00",
+      "description": "A closing roadmap for operationalizing insights from the summit."
+    }
+  ],
+  "sessions": [
+    {
+      "sessionTitle": "FinOps in the AI Era",
+      "speakerName": "Ananya Rao",
+      "speakerRole": "Chief Financial Officer",
+      "speakerCompany": "CloudAxis",
+      "room": "Saffron Auditorium",
+      "sessionType": "Keynote",
+      "startTime": "2026-06-18T09:30",
+      "endTime": "2026-06-18T10:15",
+      "capacity": 420,
+      "description": "A keynote on AI workload economics, capital allocation, and executive reporting."
+    },
+    {
+      "sessionTitle": "Budget Discipline Without Slowing Innovation",
+      "speakerName": "Rohit Menon",
+      "speakerRole": "VP, Platform Engineering",
+      "speakerCompany": "NorthStar Digital",
+      "room": "Saffron Auditorium",
+      "sessionType": "Panel",
+      "startTime": "2026-06-18T10:30",
+      "endTime": "2026-06-18T11:20",
+      "capacity": 420,
+      "description": "A panel on balancing governance, product speed, and cloud investment."
+    },
+    {
+      "sessionTitle": "Forecasting and Unit Economics for Cloud Leaders",
+      "speakerName": "Meera Kapoor",
+      "speakerRole": "Director of FinOps",
+      "speakerCompany": "BluePeak Systems",
+      "room": "Jade Studio",
+      "sessionType": "Breakout",
+      "startTime": "2026-06-18T11:40",
+      "endTime": "2026-06-18T12:30",
+      "capacity": 180,
+      "description": "Methods for rolling forecasts, scenario planning, and cost-per-product metrics."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "ticketName": "Executive Pass",
+      "tierCode": "GENERAL",
+      "price": 4200,
+      "totalQuantity": 280,
+      "maxPerOrder": 4,
+      "description": "Full summit access, keynote seating, lunch, and networking sessions."
+    },
+    {
+      "ticketName": "Leadership Circle",
+      "tierCode": "VIP",
+      "price": 8900,
+      "totalQuantity": 120,
+      "maxPerOrder": 2,
+      "description": "Priority check-in, premium seating, leadership roundtable, and speaker lounge access."
+    },
+    {
+      "ticketName": "Partner Delegate",
+      "tierCode": "SPONSOR",
+      "price": 0,
+      "totalQuantity": 20,
+      "maxPerOrder": 1,
+      "description": "Reserved allocation for strategic partners and invited ecosystem delegates."
+    }
+  ]
+}

@@ -65,6 +65,24 @@ export const venueVendorApi = {
         });
         return response.data;
     },
+    async confirmVenueBookingPayment(bookingId, payload) {
+        const response = await request({
+            url: venueVendorApiPath(`/venues/internal/bookings/${bookingId}/confirm-payment`),
+            method: "POST",
+            body: payload,
+            auth: true
+        });
+        return response.data;
+    },
+    async cancelBooking(bookingId, payload) {
+        const response = await request({
+            url: venueVendorApiPath(`/venues/bookings/${bookingId}/cancel`),
+            method: "POST",
+            body: payload || {},
+            auth: true
+        });
+        return response.data;
+    },
     async listVendors(params) {
         const query = new URLSearchParams();
         if (params?.serviceType)

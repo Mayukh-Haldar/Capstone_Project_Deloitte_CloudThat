@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Clock, X } from "lucide-react";
 import { useAuthSession } from "../lib/auth-storage";
 import { ApiClientError } from "../lib/http-client";
 import { ticketingApi } from "../lib/ticketing-api";
+import { useSeatHub } from "../lib/useSeatHub";
 
 const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -78,9 +79,56 @@ export function SeatSelection() {
         if (!id || !ticketTypeId) return;
         const data = await ticketingApi.getSeatMap(ticketTypeId, id);
         setSeatMap(data);
-        // Real server data arrived � clear any pending optimistic patches
+        // Real server data arrived — clear any pending optimistic patches
         setOptimisticOverrides({});
     }, [id, ticketTypeId]);
+
+    // Apply a single-seat delta pushed by the SignalR hub so only the changed
+    // seat needs updating without a full round-trip.
+    const handleHubSeatUpdate = useCallback((row, column, status) => {
+        setSeatMap((prev) => {
+            if (!prev) return prev;
+            const upperStatus = status.toUpperCase();
+            const updatedRows = prev.rows.map((rowData) => {
+                if (rowData.row !== row) return rowData;
+                const updatedSeats = rowData.seats.map((seat) =>
+                    seat.column === column ? { ...seat, status: upperStatus } : seat
+                );
+                return { ...rowData, seats: updatedSeats };
+            });
+            // Recalculate summary counts
+            let available = 0, reserved = 0, booked = 0;
+            for (const r of updatedRows) {
+                for (const s of r.seats) {
+                    if (s.status === "AVAILABLE") available++;
+                    else if (s.status === "RESERVED") reserved++;
+                    else if (s.status === "BOOKED") booked++;
+                }
+            }
+            return {
+                ...prev,
+                rows: updatedRows,
+                availableCount: available,
+                reservedCount: reserved,
+                bookedCount: booked,
+            };
+        });
+        // Do NOT touch optimisticOverrides here. The seatMap patch above is the
+        // source of truth for remote updates; mixing it with optimisticOverrides
+        // caused the own-user's post-reserve fetchSeatMap clear to race against
+        // hub messages from other clients.
+    }, []);
+
+    // Real-time seat updates via SignalR hub — replaces the 3-second polling loop
+    const { isConnected: hubConnected } = useSeatHub(id, ticketTypeId, handleHubSeatUpdate);
+
+    // Sparse fallback poll (15 s) only while the hub is not connected.
+    // Ensures the map catches up after a missed message or delayed hub start.
+    useEffect(() => {
+        if (loading || hubConnected) return;
+        const interval = setInterval(() => void fetchSeatMap().catch(() => {}), 15_000);
+        return () => clearInterval(interval);
+    }, [loading, hubConnected, fetchSeatMap]);
 
     // Build a lookup: "ROW-COL" => status; optimistic overrides applied on top for instant UI feedback
     const seatStatusMap = useMemo(() => {
@@ -122,13 +170,6 @@ export function SeatSelection() {
         void load();
         return () => { cancelled = true; };
     }, [id, ticketTypeId]);
-
-    // Auto-refresh every 3 s for near-real-time updates from other users
-    useEffect(() => {
-        if (loading) return;
-        const interval = setInterval(() => void fetchSeatMap().catch(() => {}), 3_000);
-        return () => clearInterval(interval);
-    }, [loading, fetchSeatMap]);
 
     // Countdown timer
     useEffect(() => {
@@ -199,8 +240,35 @@ export function SeatSelection() {
         }
     };
 
+    // Auto-cancel the reservation when leaving the page (back button, nav away, unmount).
+    // Uses a ref so the cleanup always sees the latest reservation without being a dep.
+    const reservationRef = useRef(null);
+    reservationRef.current = reservation;
+    const ticketTypeIdRef = useRef(ticketTypeId);
+    ticketTypeIdRef.current = ticketTypeId;
+
+    useEffect(() => {
+        return () => {
+            const active = reservationRef.current;
+            if (active) {
+                // Fire-and-forget — best effort, page is leaving
+                ticketingApi.cancelReservation(ticketTypeIdRef.current, active.reservationId).catch(() => {});
+            }
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // empty deps: run cleanup only on unmount
+
+    const handleBack = async () => {
+        if (reservation) {
+            await ticketingApi.cancelReservation(ticketTypeId, reservation.reservationId).catch(() => {});
+        }
+        void navigate(`/events/${id}`);
+    };
+
     const handleContinue = () => {
         if (!reservation || !selectedSeat || timeLeft === 0) return;
+        // Clear the ref so unmount cleanup doesn't cancel a reservation we intentionally kept
+        reservationRef.current = null;
         void navigate(
             `/events/${id}/checkout/${ticketTypeId}` +
             `?seatRow=${encodeURIComponent(selectedSeat.row)}` +
@@ -222,9 +290,9 @@ export function SeatSelection() {
             <section className="min-h-screen p-8">
                 <p className="text-sm text-red-600">{error}</p>
                 {id && (
-                    <Link to={`/events/${id}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
+                    <button onClick={handleBack} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
                         <ArrowLeft className="size-4" />Back to event
-                    </Link>
+                    </button>
                 )}
             </section>
         );
@@ -233,20 +301,28 @@ export function SeatSelection() {
     return (
         <section className="min-h-screen bg-[#f3f5f9] px-4 py-8 text-slate-900 dark:bg-[#09132a] dark:text-slate-100 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-5xl space-y-6">
-                <Link to={`/events/${id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
+                <button onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1132d4]">
                     <ArrowLeft className="size-4" />Back to event
-                </Link>
+                </button>
 
                 {/* Header */}
                 <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0f172e]">
                     <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#1132d4]">Select your seat</p>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                                hubConnected
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                    : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-400"
+                            }`}>
                             <span className="relative flex size-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+                                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
+                                    hubConnected ? "bg-emerald-400" : "bg-amber-400"
+                                }`} />
+                                <span className={`relative inline-flex size-1.5 rounded-full ${
+                                    hubConnected ? "bg-emerald-500" : "bg-amber-500"
+                                }`} />
                             </span>
-                            Live
+                            {hubConnected ? "Live" : "Syncing..."}
                         </span>
                     </div>
                     <h1 className="mt-2 text-2xl font-black">{seatMap?.ticketTypeName}</h1>
@@ -291,13 +367,14 @@ export function SeatSelection() {
 
                 {/* Hall grid */}
                 <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0f172e] overflow-x-auto">
+                    <div className="w-fit mx-auto">
                     {/* Stage */}
                     <div className="mb-8 mx-auto max-w-sm rounded-2xl bg-gradient-to-r from-[#1132d4]/20 via-[#4f7cff]/15 to-[#1132d4]/20 border border-[#1132d4]/20 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.3em] text-[#1132d4]">
                         {"\u2605"} &nbsp;Stage / Screen&nbsp; {"\u2605"}
                     </div>
 
                     {/* Render each section with a label band */}
-                    <div className="space-y-1 min-w-max mx-auto">
+                    <div className="space-y-1">
                         {sections.map((section) => {
                             const pal = TIER_PALETTES[section.paletteIndex];
                             // rows in this section
@@ -318,7 +395,7 @@ export function SeatSelection() {
                                     </div>
 
                                     {/* Rows */}
-                                    <div className="space-y-1.5">
+                                    <div className="flex flex-col items-center space-y-1.5">
                                         {rowLabels.map((rowLabel, localRowIdx) => {
                                             const seatsInThisRow =
                                                 localRowIdx === section.rowCount - 1
@@ -367,6 +444,7 @@ export function SeatSelection() {
                                                             );
                                                         })}
                                                     </div>
+                                                    <span className="w-7 flex-shrink-0 text-center text-xs font-bold text-slate-400">{rowLabel}</span>
                                                 </div>
                                             );
                                         })}
@@ -374,6 +452,7 @@ export function SeatSelection() {
                                 </div>
                             );
                         })}
+                    </div>
                     </div>
                 </div>
 

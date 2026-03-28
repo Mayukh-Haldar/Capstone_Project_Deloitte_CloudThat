@@ -155,8 +155,11 @@ public class InvoiceAssetService {
 
         contentLines.addAll(drawTextBlock("EVENT DETAILS", 300, sectionY, 10, "F2", textMuted, 60, 15));
         contentLines.addAll(drawTextBlock(safe(payment.getEventName()), 300, sectionY - 20, 14, "F2", textDark, 32, 18));
-        contentLines.addAll(drawTextBlock("Registration ID:", 300, sectionY - 40, 11, "F1", textLight, 40, 15));
-        contentLines.addAll(drawTextBlock(safe(payment.getRegistrationId()), 300, sectionY - 55, 11, "F1", textLight, 24, 15));
+        boolean venuePayment = payment.getVenueBookingId() != null;
+        String resourceLabel = venuePayment ? "Venue Booking ID:" : "Registration ID:";
+        String resourceValue = venuePayment ? safe(payment.getVenueBookingId()) : safe(payment.getRegistrationId());
+        contentLines.addAll(drawTextBlock(resourceLabel, 300, sectionY - 40, 11, "F1", textLight, 40, 15));
+        contentLines.addAll(drawTextBlock(resourceValue, 300, sectionY - 55, 11, "F1", textLight, 24, 15));
         contentLines.addAll(drawTextBlock("Payment ID:", 300, sectionY - 85, 11, "F1", textLight, 40, 15));
         contentLines.addAll(drawTextBlock(safe(payment.getId()), 300, sectionY - 100, 11, "F1", textLight, 24, 15));
 
@@ -175,6 +178,7 @@ public class InvoiceAssetService {
         contentLines.addAll(drawTextBlock("Value", 250, 423, 10, "F2", textDark, 60, 15));
 
         String[][] detailRows = {
+                {venuePayment ? "Venue Booking ID" : "Registration ID", resourceValue},
                 {"Payment Reference", safe(payment.getGatewayReference())},
                 {"Gateway Order ID", safe(payment.getGatewayOrderId())},
                 {"Gateway Payment ID", safe(payment.getGatewayPaymentId())},
@@ -191,7 +195,9 @@ public class InvoiceAssetService {
         contentLines.add("q " + border + " RG 45 " + (rowTop + 15) + " 505 1 re S Q");
 
         contentLines.addAll(drawTextBlock("Payment confirmation", 45, 124, 14, "F2", primary, 88, 18));
-        contentLines.addAll(drawTextBlock("Thank you for your purchase. This invoice confirms that your payment was successfully received by EventZen.", 45, 104, 10, "F1", textMuted, 88, 13));
+        contentLines.addAll(drawTextBlock(venuePayment
+                ? "Thank you for your venue booking payment. This invoice confirms that your payment was successfully received by EventZen."
+                : "Thank you for your purchase. This invoice confirms that your payment was successfully received by EventZen.", 45, 104, 10, "F1", textMuted, 88, 13));
         contentLines.addAll(drawTextBlock("For invoice-related support, contact support@eventzen.com with your invoice number.", 45, 76, 10, "F1", textMuted, 88, 13));
 
         String contentStream = String.join("\n", contentLines);

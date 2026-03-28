@@ -85,6 +85,7 @@ public class FinanceMapper {
                 payment.getEventId(),
                 payment.getEventName(),
                 payment.getRegistrationId(),
+                payment.getVenueBookingId(),
                 payment.getAmount(),
                 payment.getCurrency(),
                 payment.getPaymentMethod(),
