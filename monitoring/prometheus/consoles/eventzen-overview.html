@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EventZen Prometheus Overview</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 24px;
+      background: #f7f9fc;
+      color: #1f2937;
+    }
+
+    h1, h2 {
+      margin-bottom: 12px;
+    }
+
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 20px 0 28px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #d7e0ea;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+      min-width: 180px;
+      padding: 16px 18px;
+    }
+
+    .card .label {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .card .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid #d7e0ea;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e5edf5;
+      text-align: left;
+    }
+
+    th {
+      background: #eff6ff;
+      color: #1e3a8a;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-up {
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    .status-down {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    .links {
+      margin: 18px 0 28px;
+    }
+
+    .links a {
+      display: inline-block;
+      margin-right: 14px;
+      margin-bottom: 10px;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .muted {
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>EventZen Prometheus Overview</h1>
+  <p class="muted">Native Prometheus console for quick service-health checks and shortcuts into the graph explorer. In the table below, <strong>1</strong> means up and <strong>0</strong> means down.</p>
+
+  <div class="links">
+    <a href="/targets">Targets</a>
+    <a href="/service-discovery">Service Discovery</a>
+    <a href="/rules">Rules</a>
+    <a href="/alerts">Alerts</a>
+    <a href="/graph?g0.expr=up&g0.tab=0">Graph: up</a>
+    <a href="/graph?g0.expr=rate%28prometheus_tsdb_head_samples_appended_total%5B5m%5D%29&g0.tab=0">Graph: TSDB ingest rate</a>
+  </div>
+
+  <h2>Scrape Health</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Job</th>
+        <th>Instance</th>
+        <th>up</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range printf "up" | query }}
+      <tr>
+        <td>{{ label "job" . }}</td>
+        <td>{{ label "instance" . }}</td>
+        <td>{{ value . }}</td>
+      </tr>
+      {{ else }}
+      <tr>
+        <td colspan="3">No target data available.</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</body>
+</html>
