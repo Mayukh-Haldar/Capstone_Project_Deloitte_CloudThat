@@ -2,7 +2,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 // Helper to convert currency string to number
 const parseCurrency = (currencyStr) => {
-    return parseFloat(currencyStr.replace(/[^0-9.-]+/g, "")) || 0;
+    if (currencyStr == null) return 0;
+    return parseFloat(String(currencyStr).replace(/[^0-9.-]+/g, "")) || 0;
 };
 // Format currency for PDF (avoiding encoding issues and compact format)
 const formatPdfCurrency = (value) => {

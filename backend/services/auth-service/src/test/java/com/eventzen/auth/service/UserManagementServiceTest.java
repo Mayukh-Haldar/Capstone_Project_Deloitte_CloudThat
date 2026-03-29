@@ -61,6 +61,7 @@ class UserManagementServiceTest {
         User user = User.register("Mayuk", "Tester", "mayuk@example.com", "encoded", null);
         Role adminRole = Role.create(RoleName.ADMIN, "admin");
         AssignRolesRequest request = new AssignRolesRequest(Set.of(RoleName.ADMIN));
+        UUID actorId = UUID.randomUUID();
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(roleRepository.findAllByNameIn(Set.of(RoleName.ADMIN))).thenReturn(List.of(adminRole));
@@ -68,7 +69,7 @@ class UserManagementServiceTest {
                 new UserResponse(user.getId(), "Mayuk", "Tester", "mayuk@example.com", null, true, false, false, Set.of("ADMIN"), Instant.now(), null)
         );
 
-        UserResponse response = userManagementService.assignRoles(user.getId(), request);
+        UserResponse response = userManagementService.assignRoles(actorId, user.getId(), request);
 
         assertThat(response.roles()).containsExactly("ADMIN");
         verify(userRoleRepository).deleteAllByUser_Id(user.getId());
@@ -79,11 +80,12 @@ class UserManagementServiceTest {
     void deactivateUserMarksInactiveAndRevokesTokens() {
         User user = User.register("Mayuk", "Tester", "mayuk@example.com", "encoded", null);
         RefreshToken token = RefreshToken.of(user, "hash", Instant.now().plusSeconds(60), UUID.randomUUID(), "127.0.0.1");
+        UUID actorId = UUID.randomUUID();
 
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(refreshTokenRepository.findAllByUser_Id(user.getId())).thenReturn(List.of(token));
 
-        userManagementService.deactivateUser(user.getId());
+        userManagementService.deactivateUser(actorId, user.getId());
 
         assertThat(user.isActive()).isFalse();
         verify(userRepository).save(user);
@@ -94,9 +96,10 @@ class UserManagementServiceTest {
     void reactivateUserMarksUserActive() {
         User user = User.register("Mayuk", "Tester", "mayuk@example.com", "encoded", null);
         user.deactivate();
+        UUID actorId = UUID.randomUUID();
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        userManagementService.reactivateUser(user.getId());
+        userManagementService.reactivateUser(actorId, user.getId());
 
         assertThat(user.isActive()).isTrue();
         verify(userRepository).save(user);
@@ -106,10 +109,11 @@ class UserManagementServiceTest {
     void gdprDeleteAnonymizesUser() {
         User user = User.register("Mayuk", "Tester", "mayuk@example.com", "encoded", "+911234567890");
         RefreshToken token = RefreshToken.of(user, "hash", Instant.now().plusSeconds(60), UUID.randomUUID(), "127.0.0.1");
+        UUID actorId = UUID.randomUUID();
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(refreshTokenRepository.findAllByUser_Id(user.getId())).thenReturn(List.of(token));
 
-        userManagementService.gdprDelete(user.getId());
+        userManagementService.gdprDelete(actorId, user.getId());
 
         assertThat(user.isActive()).isFalse();
         assertThat(user.getEmail()).startsWith("deleted-");
@@ -124,8 +128,30 @@ class UserManagementServiceTest {
         when(roleRepository.findAllByNameIn(Set.of(RoleName.ADMIN, RoleName.ORGANIZER))).thenReturn(List.of(Role.create(RoleName.ADMIN, "admin")));
 
         assertThatThrownBy(() -> userManagementService.assignRoles(
+                UUID.randomUUID(),
                 user.getId(),
                 new AssignRolesRequest(Set.of(RoleName.ADMIN, RoleName.ORGANIZER))
         )).isInstanceOf(EventZenException.class);
+    }
+
+    @Test
+    void assignRolesRejectsSelfManagementForAdmin() {
+        User user = User.seededAccount(UUID.randomUUID(), "Mayuk", "Tester", "mayuk@example.com", "encoded", null);
+
+        assertThatThrownBy(() -> userManagementService.assignRoles(
+                user.getId(),
+                user.getId(),
+                new AssignRolesRequest(Set.of(RoleName.ADMIN))
+        )).isInstanceOf(EventZenException.class)
+                .hasMessageContaining("Admins cannot change their own account status or roles");
+    }
+
+    @Test
+    void deactivateUserRejectsSelfManagementForAdmin() {
+        User user = User.seededAccount(UUID.randomUUID(), "Mayuk", "Tester", "mayuk@example.com", "encoded", null);
+
+        assertThatThrownBy(() -> userManagementService.deactivateUser(user.getId(), user.getId()))
+                .isInstanceOf(EventZenException.class)
+                .hasMessageContaining("Admins cannot change their own account status or roles");
     }
 }

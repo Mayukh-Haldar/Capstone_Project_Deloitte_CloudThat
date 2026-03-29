@@ -1,0 +1,415 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Deep-dive metrics for Spring Boot / Micrometer services: auth-service, event-service, finance-service.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "asDropdown": false, "icon": "external link", "includeVars": false, "keepTime": true, "targetBlank": false, "title": "Platform Overview", "type": "link", "url": "/d/eventzen-overview" }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "DOWN" }, "1": { "color": "green", "index": 0, "text": "UP" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "up{job=~\"$service\"}", "instant": true, "legendFormat": "{{job}}", "refId": "A" }],
+      "title": "Service Up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "total", "refId": "A" }],
+      "title": "Request Rate (req/s)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 }] },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\",outcome=\"SERVER_ERROR\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=~\"$service\"}[$__rate_interval]))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "5xx Error Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 12, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=~\"$service\"}[$__rate_interval])))", "legendFormat": "", "refId": "A" }],
+      "title": "P95 Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 0.8 }] },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 16, "y": 1 },
+      "id": 6,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum(jvm_memory_used_bytes{area=\"heap\",job=~\"$service\"}) / sum(jvm_memory_max_bytes{area=\"heap\",job=~\"$service\"})", "legendFormat": "", "refId": "A" }],
+      "title": "Heap Utilisation",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 20, "y": 1 },
+      "id": 7,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum(jvm_threads_live_threads{job=~\"$service\"})", "legendFormat": "", "refId": "A" }],
+      "title": "Live Threads",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "id": 8,
+      "title": "HTTP",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 9,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (job) (rate(http_server_requests_seconds_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "HTTP Request Rate by Service (req/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 10,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (status) (rate(http_server_requests_seconds_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "HTTP {{status}}", "refId": "A" }
+      ],
+      "title": "HTTP Request Rate by Status Code",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "id": 11,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.99, sum by (job, le) (rate(http_server_requests_seconds_bucket{job=~\"$service\"}[$__rate_interval])))", "legendFormat": "{{job}} P99", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket{job=~\"$service\"}[$__rate_interval])))", "legendFormat": "{{job}} P95", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.50, sum by (job, le) (rate(http_server_requests_seconds_bucket{job=~\"$service\"}[$__rate_interval])))", "legendFormat": "{{job}} P50", "refId": "C" }
+      ],
+      "title": "HTTP Response Latency Percentiles (P50 / P95 / P99)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "id": 12,
+      "title": "JVM Memory",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "id": 13,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (job) (jvm_memory_used_bytes{area=\"heap\",job=~\"$service\"})", "legendFormat": "{{job}} heap used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (job) (jvm_memory_max_bytes{area=\"heap\",job=~\"$service\"})", "legendFormat": "{{job}} heap max", "refId": "B" }
+      ],
+      "title": "JVM Heap Memory Used vs Max",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "id": 14,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (job) (jvm_memory_used_bytes{area=\"nonheap\",job=~\"$service\"})", "legendFormat": "{{job}} non-heap used", "refId": "A" }
+      ],
+      "title": "JVM Non-Heap Memory (Metaspace)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 15,
+      "title": "JVM GC & Threads",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 16,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (job, action) (rate(jvm_gc_pause_seconds_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{job}} {{action}}", "refId": "A" }
+      ],
+      "title": "GC Pause Rate (pauses/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 17,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "jvm_threads_live_threads{job=~\"$service\"}", "legendFormat": "{{job}} live", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "jvm_threads_daemon_threads{job=~\"$service\"}", "legendFormat": "{{job}} daemon", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "jvm_threads_peak_threads{job=~\"$service\"}", "legendFormat": "{{job}} peak", "refId": "C" }
+      ],
+      "title": "JVM Thread Count",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "id": 18,
+      "title": "CPU",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 19,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "process_cpu_usage{job=~\"$service\"}", "legendFormat": "{{job}} process", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "system_cpu_usage{job=~\"$service\"}", "legendFormat": "{{job}} system", "refId": "B" }
+      ],
+      "title": "CPU Usage (Process & System)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 20,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "process_uptime_seconds{job=~\"$service\"}", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "Process Uptime",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["eventzen", "jvm", "spring-boot"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [
+          { "selected": true, "text": "All", "value": "$__all" },
+          { "selected": false, "text": "auth-service", "value": "auth-service" },
+          { "selected": false, "text": "event-service", "value": "event-service" },
+          { "selected": false, "text": "finance-service", "value": "finance-service" }
+        ],
+        "query": "auth-service,event-service,finance-service",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "EventZen - JVM Services (Spring Boot)",
+  "uid": "eventzen-jvm",
+  "version": 1,
+  "weekStart": ""
+}

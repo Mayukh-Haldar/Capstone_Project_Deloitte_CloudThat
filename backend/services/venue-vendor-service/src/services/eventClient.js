@@ -32,4 +32,35 @@ const notifyVenueBookingCancelled = async ({
   }
 };
 
-module.exports = { notifyVenueBookingCancelled };
+const getEventBookingOwner = async (eventId) => {
+  if (!eventId || !env.eventServiceBaseUrl) {
+    return null;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+
+    try {
+      const response = await fetch(`${env.eventServiceBaseUrl.replace(/\/$/, "")}/api/v1/internal/events/${eventId}/booking-owner`, {
+        method: "GET",
+        headers: {
+          "x-internal-service-key": env.internalServiceKey
+        },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch (_error) {
+    return null;
+  }
+};
+
+module.exports = { notifyVenueBookingCancelled, getEventBookingOwner };

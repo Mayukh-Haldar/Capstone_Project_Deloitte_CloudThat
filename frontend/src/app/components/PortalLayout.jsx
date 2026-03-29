@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, DollarSign, LayoutDashboard, Map, ScanLine, ShieldCheck } from "lucide-react";
+import { BarChart3, Calendar, DollarSign, LayoutDashboard, Map, ScanLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useSidebar } from "./SidebarContext";
@@ -7,7 +7,7 @@ const navByPortal = {
     ADMIN: [
         { label: "Admin Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
         { label: "Event Operations", to: "/admin/events", icon: Calendar },
-        { label: "Venue Operations", to: "/admin/venues", icon: Map },
+        { label: "Venue & Vendor Ops", to: "/admin/venues", icon: Map },
         { label: "Check-In Command Center", to: "/admin/check-in", icon: ScanLine },
         { label: "Admin Finance", to: "/admin/finance", icon: DollarSign },
         { label: "Admin Reports", to: "/admin/reports", icon: BarChart3 }
@@ -21,8 +21,7 @@ const navByPortal = {
         { label: "Vendor Reports", to: "/vendor/reports", icon: BarChart3 }
     ],
     CUSTOMER: [
-        { label: "Customer Portal", to: "/customer/dashboard", icon: LayoutDashboard },
-        { label: "Security", to: "/account/settings", icon: ShieldCheck }
+        { label: "Customer Portal", to: "/customer/dashboard", icon: LayoutDashboard }
     ]
 };
 export function PortalLayout() {

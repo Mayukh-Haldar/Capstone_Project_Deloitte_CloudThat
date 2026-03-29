@@ -10,6 +10,8 @@ public record FinancialReportResponse(
         String eventName,
         BudgetResponse budget,
         BigDecimal totalRevenue,
+        BigDecimal ticketBookingRevenue,
+        BigDecimal venueBookingRevenue,
         BigDecimal totalExpenses,
         BigDecimal netProfit,
         long successfulPayments,

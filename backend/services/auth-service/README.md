@@ -28,7 +28,7 @@ Add these to `backend/services/auth-service/.env` to enable real mail delivery:
 AUTH_SMTP_HOST=smtp.gmail.com
 AUTH_SMTP_PORT=587
 AUTH_SMTP_USERNAME=replace-with-smtp-username
-AUTH_SMTP_PASSWORD=your-app-password
+AUTH_SMTP_PASSWORD=<set-via-local-secret-store>
 AUTH_SMTP_AUTH=true
 AUTH_SMTP_STARTTLS=true
 AUTH_MAIL_FROM_EMAIL=no-reply@example.com

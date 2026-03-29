@@ -49,6 +49,8 @@ public class FinancialReportService {
             eventName = budget.getEventName();
         }
         BigDecimal totalRevenue = paymentRepository.totalByEventIdAndStatus(eventId, PaymentStatus.SUCCEEDED);
+        BigDecimal ticketBookingRevenue = paymentRepository.totalTicketRevenueByEventIdAndStatus(eventId, PaymentStatus.SUCCEEDED);
+        BigDecimal venueBookingRevenue = paymentRepository.totalVenueRevenueByEventIdAndStatus(eventId, PaymentStatus.SUCCEEDED);
         BigDecimal totalExpenses = expenseRepository.totalByEventId(eventId);
         BigDecimal netProfit = totalRevenue.subtract(totalExpenses);
         List<Payment> payments = paymentRepository.findTop10ByEventIdOrderByCreatedAtDesc(eventId);
@@ -71,6 +73,8 @@ public class FinancialReportService {
                 eventName,
                 budgetResponse,
                 totalRevenue,
+                ticketBookingRevenue,
+                venueBookingRevenue,
                 totalExpenses,
                 netProfit,
                 paymentRepository.countByEventIdAndPaymentStatus(eventId, PaymentStatus.SUCCEEDED),

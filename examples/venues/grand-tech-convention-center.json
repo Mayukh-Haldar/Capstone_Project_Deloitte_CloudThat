@@ -1,0 +1,32 @@
+{
+  "venueName": "Grand Tech Convention Center",
+  "address": "88 Innovation Boulevard, Whitefield",
+  "city": "Bengaluru",
+  "capacity": 2400,
+  "pricePerDay": 185000,
+  "amenities": [
+    "High-speed Wi-Fi",
+    "LED stage wall",
+    "On-site parking",
+    "VIP green rooms",
+    "Accessible entrances"
+  ],
+  "mediaGallery": [
+    "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80",
+    "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80"
+  ],
+  "halls": [
+    {
+      "hallName": "Titan Hall",
+      "capacity": 1200
+    },
+    {
+      "hallName": "Orbit Ballroom",
+      "capacity": 700
+    },
+    {
+      "hallName": "Launchpad Studio",
+      "capacity": 300
+    }
+  ]
+}

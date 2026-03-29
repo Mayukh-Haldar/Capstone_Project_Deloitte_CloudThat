@@ -41,7 +41,7 @@ Add these to the notification-service `.env`:
 ```env
 NOTIFICATION_FIREBASE_PROJECT_ID=your-firebase-project-id
 NOTIFICATION_FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-NOTIFICATION_FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+NOTIFICATION_FIREBASE_PRIVATE_KEY=<set-via-local-secret-store>
 ```
 
 The frontend also needs Firebase Web SDK config and a VAPID key so browsers can register push tokens.

@@ -1,0 +1,29 @@
+{
+  "venueName": "Heritage Arts Pavilion",
+  "address": "5 Palace Gardens Lane, Banjara Hills",
+  "city": "Hyderabad",
+  "capacity": 950,
+  "pricePerDay": 98000,
+  "amenities": [
+    "Premium acoustic treatment",
+    "Backstage holding rooms",
+    "Exhibition foyer",
+    "In-house lighting grid",
+    "Valet parking"
+  ],
+  "mediaGallery": "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1400&q=80, https://images.unsplash.com/photo-1503428593586-e225b39bddfe?auto=format&fit=crop&w=1400&q=80",
+  "halls": [
+    {
+      "hallName": "Royal Stage",
+      "capacity": 500
+    },
+    {
+      "hallName": "Courtyard Gallery",
+      "capacity": 250
+    },
+    {
+      "hallName": "Writers Room",
+      "capacity": 90
+    }
+  ]
+}

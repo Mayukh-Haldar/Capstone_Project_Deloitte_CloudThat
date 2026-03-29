@@ -18,6 +18,14 @@ export function AdminVendors() {
     const [reviewEventId, setReviewEventId] = useState("");
     const [reviewRating, setReviewRating] = useState("");
     const [reviewComment, setReviewComment] = useState("");
+    const [vendorEventIds, setVendorEventIds] = useState(null);
+    const [loadingVendorEvents, setLoadingVendorEvents] = useState(false);
+    const [rightPanel, setRightPanel] = useState("review");
+    const [newVendorName, setNewVendorName] = useState("");
+    const [newVendorService, setNewVendorService] = useState("");
+    const [newVendorEmail, setNewVendorEmail] = useState("");
+    const [newVendorPhone, setNewVendorPhone] = useState("");
+    const [registerSubmitting, setRegisterSubmitting] = useState(false);
     const loadVendors = async () => {
         setLoading(true);
         setError("");
@@ -47,6 +55,34 @@ export function AdminVendors() {
         };
         void loadEvents();
     }, []);
+    useEffect(() => {
+        if (!reviewVendorId) {
+            setVendorEventIds(null);
+            setReviewEventId("");
+            return;
+        }
+        const fetchVendorEvents = async () => {
+            setLoadingVendorEvents(true);
+            setReviewEventId("");
+            try {
+                const ids = await venueVendorApi.getVendorEventIds(reviewVendorId);
+                setVendorEventIds(ids);
+            }
+            catch {
+                setVendorEventIds([]);
+            }
+            finally {
+                setLoadingVendorEvents(false);
+            }
+        };
+        void fetchVendorEvents();
+    }, [reviewVendorId]);
+    const filteredReviewEvents = useMemo(() => {
+        if (!vendorEventIds) return [];
+        // If vendor has no contracts yet, fall back to showing all events
+        if (vendorEventIds.length === 0) return events;
+        return events.filter((e) => vendorEventIds.includes(e.id));
+    }, [vendorEventIds, events]);
     const handleAddReview = async (event) => {
         event.preventDefault();
         setError("");
@@ -74,6 +110,32 @@ export function AdminVendors() {
         }
         finally {
             setSubmitting(false);
+        }
+    };
+    const handleRegisterVendor = async (e) => {
+        e.preventDefault();
+        setError("");
+        setMessage("");
+        setRegisterSubmitting(true);
+        try {
+            await venueVendorApi.createVendor({
+                vendorName: newVendorName,
+                serviceType: newVendorService,
+                email: newVendorEmail,
+                phone: newVendorPhone
+            });
+            setMessage(`Vendor "${newVendorName}" registered successfully.`);
+            setNewVendorName("");
+            setNewVendorService("");
+            setNewVendorEmail("");
+            setNewVendorPhone("");
+            await loadVendors();
+        }
+        catch (err) {
+            setError(err instanceof ApiClientError ? err.message : "Vendor registration failed.");
+        }
+        finally {
+            setRegisterSubmitting(false);
         }
     };
     const filteredVendors = useMemo(() => vendors.filter((vendor) => {
@@ -135,66 +197,102 @@ export function AdminVendors() {
                 </p>
               </div>
             </div>
+
+            {loading ? (<p className="mt-5 text-sm text-slate-600 dark:text-slate-300">Loading vendors...</p>) : (<div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {filteredVendors.map((vendor) => (<article key={vendor.vendorId} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#0f172e]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-lg font-bold">{vendor.vendorName}</h2>
+                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{vendor.serviceType}</p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${vendor.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>
+                        {vendor.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <p className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber-600">
+                      <Star className="size-4 fill-current"/> {vendor.rating.toFixed(1)} ({vendor.reviewCount} reviews)
+                    </p>
+                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                      <p className="inline-flex items-center gap-2"><FileText className="size-4"/> Vendor ID: {vendor.vendorId}</p>
+                      <p className="inline-flex items-center gap-2"><Users className="size-4"/> Contact: {vendor.phone}</p>
+                      <p className="truncate">{vendor.email}</p>
+                    </div>
+                  </article>))}
+              </div>)}
           </article>
 
           <article className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111a33]">
-            <h2 className="text-lg font-bold">Add Vendor Review</h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Record an admin review for a vendor against a completed or tracked event.</p>
-            <form onSubmit={handleAddReview} className="mt-4 space-y-3">
-              <label className="space-y-1 text-sm font-medium">
-                <span>Vendor<span className="required-mark">*</span></span>
-                <select required value={reviewVendorId} onChange={(event) => setReviewVendorId(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]">
-                  <option value="">Select a vendor</option>
-                  {vendors.map((vendor) => (<option key={vendor.vendorId} value={vendor.vendorId}>
-                      {vendor.vendorName}
-                    </option>))}
-                </select>
-              </label>
-              <label className="space-y-1 text-sm font-medium">
-                <span>Event<span className="required-mark">*</span></span>
-                <select required value={reviewEventId} onChange={(event) => setReviewEventId(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]">
-                  <option value="">Select an event</option>
-                  {events.map((item) => (<option key={item.id} value={item.id}>
-                      {item.title}
-                    </option>))}
-                </select>
-              </label>
-              <label className="space-y-1 text-sm font-medium">
-                <span>Rating<span className="required-mark">*</span></span>
-                <input required type="number" min={1} max={5} value={reviewRating} onChange={(event) => setReviewRating(event.target.value)} placeholder="Rate from 1 to 5" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
-              </label>
-              <label className="space-y-1 text-sm font-medium">
-                <span>Comment</span>
-                <textarea value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} placeholder="Share feedback about the vendor service" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
-              </label>
-              <button type="submit" disabled={submitting} className="w-full rounded-lg border border-slate-300 py-2 text-sm font-semibold dark:border-white/20 disabled:opacity-60">
-                {submitting ? "Submitting..." : "Submit Review"}
-              </button>
-            </form>
+            <div className="flex gap-1 rounded-xl border border-slate-200 p-1 dark:border-white/10">
+              <button type="button" onClick={() => setRightPanel("register")} className={`flex-1 rounded-lg py-1.5 text-sm font-semibold transition ${rightPanel === "register" ? "bg-[#1132d4] text-white" : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}`}>Register Vendor</button>
+              <button type="button" onClick={() => setRightPanel("review")} className={`flex-1 rounded-lg py-1.5 text-sm font-semibold transition ${rightPanel === "review" ? "bg-[#1132d4] text-white" : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}`}>Add Review</button>
+            </div>
+
+            {rightPanel === "register" && (<>
+              <h2 className="mt-4 text-lg font-bold">Register New Vendor</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Add a vendor to the catalog after assigning them the vendor role.</p>
+              <form onSubmit={handleRegisterVendor} className="mt-4 space-y-3">
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Vendor Name<span className="required-mark">*</span></span>
+                  <input required value={newVendorName} onChange={(e) => setNewVendorName(e.target.value)} placeholder="e.g. Acme AV Solutions" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Service Type<span className="required-mark">*</span></span>
+                  <select required value={newVendorService} onChange={(e) => setNewVendorService(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]">
+                    <option value="">Select a service type</option>
+                    {serviceCategories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Email<span className="required-mark">*</span></span>
+                  <input required type="email" value={newVendorEmail} onChange={(e) => setNewVendorEmail(e.target.value)} placeholder="vendor@example.com" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Phone<span className="required-mark">*</span></span>
+                  <input required value={newVendorPhone} onChange={(e) => setNewVendorPhone(e.target.value)} placeholder="+91-90000-XXXXX" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
+                </label>
+                <button type="submit" disabled={registerSubmitting} className="w-full rounded-lg border border-slate-300 py-2 text-sm font-semibold dark:border-white/20 disabled:opacity-60">
+                  {registerSubmitting ? "Registering..." : "Register Vendor"}
+                </button>
+              </form>
+            </>)}
+
+            {rightPanel === "review" && (<>
+              <h2 className="mt-4 text-lg font-bold">Add Vendor Review</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Record an admin review for a vendor against a completed or tracked event.</p>
+              <form onSubmit={handleAddReview} className="mt-4 space-y-3">
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Vendor<span className="required-mark">*</span></span>
+                  <select required value={reviewVendorId} onChange={(event) => setReviewVendorId(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]">
+                    <option value="">Select a vendor</option>
+                    {vendors.map((vendor) => (<option key={vendor.vendorId} value={vendor.vendorId}>
+                        {vendor.vendorName}
+                      </option>))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Event<span className="required-mark">*</span></span>
+                  <select required value={reviewEventId} onChange={(event) => setReviewEventId(event.target.value)} disabled={!reviewVendorId || loadingVendorEvents} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e] disabled:opacity-60">
+                    <option value="">{loadingVendorEvents ? "Loading events..." : reviewVendorId ? (filteredReviewEvents.length === 0 ? "No events available" : (vendorEventIds?.length === 0 ? "Select an event (all events shown)" : "Select an event")) : "Select a vendor first"}</option>
+                    {filteredReviewEvents.map((item) => (<option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Rating<span className="required-mark">*</span></span>
+                  <input required type="number" min={1} max={5} value={reviewRating} onChange={(event) => setReviewRating(event.target.value)} placeholder="Rate from 1 to 5" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
+                </label>
+                <label className="space-y-1 text-sm font-medium">
+                  <span>Comment</span>
+                  <textarea value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} placeholder="Share feedback about the vendor service" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal dark:border-white/20 dark:bg-[#0f172e]"/>
+                </label>
+                <button type="submit" disabled={submitting} className="w-full rounded-lg border border-slate-300 py-2 text-sm font-semibold dark:border-white/20 disabled:opacity-60">
+                  {submitting ? "Submitting..." : "Submit Review"}
+                </button>
+              </form>
+            </>)}
           </article>
         </div>
-
-        {loading ? (<p className="text-sm text-slate-600 dark:text-slate-300">Loading vendors...</p>) : (<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredVendors.map((vendor) => (<article key={vendor.vendorId} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111a33]">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold">{vendor.vendorName}</h2>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{vendor.serviceType}</p>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${vendor.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>
-                    {vendor.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <p className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber-600">
-                  <Star className="size-4 fill-current"/> {vendor.rating.toFixed(1)} ({vendor.reviewCount} reviews)
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <p className="inline-flex items-center gap-2"><FileText className="size-4"/> Vendor ID: {vendor.vendorId}</p>
-                  <p className="inline-flex items-center gap-2"><Users className="size-4"/> Contact: {vendor.phone}</p>
-                  <p className="truncate">{vendor.email}</p>
-                </div>
-              </article>))}
-          </div>)}
       </div>
     </main>);
 }

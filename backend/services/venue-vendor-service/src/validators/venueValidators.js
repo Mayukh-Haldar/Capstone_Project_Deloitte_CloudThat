@@ -17,6 +17,7 @@ const listVenueBookingsSchema = z.object({
   query: z.object({
     venueId: uuidSchema.optional(),
     eventId: uuidSchema.optional(),
+    bookingStatus: z.enum(["ACTIVE", "CANCELLED", "ALL"]).optional(),
     upcomingOnly: z.coerce.boolean().optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().optional()
@@ -146,6 +147,14 @@ const cancelVenueBookingSchema = z.object({
   }).optional().default({})
 });
 
+const deleteVenueBookingSchema = z.object({
+  params: z.object({
+    bookingId: uuidSchema
+  }),
+  query: z.object({}).optional().default({}),
+  body: z.object({}).optional().default({})
+});
+
 module.exports = {
   listVenuesSchema,
   listVenueBookingsSchema,
@@ -155,5 +164,6 @@ module.exports = {
   checkAvailabilitySchema,
   createBookingSchema,
   confirmVenueBookingPaymentSchema,
-  cancelVenueBookingSchema
+  cancelVenueBookingSchema,
+  deleteVenueBookingSchema
 };

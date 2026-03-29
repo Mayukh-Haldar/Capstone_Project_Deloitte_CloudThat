@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarCheck, CheckCircle2, Lock, Mail } from "lucide-react";
+import { ArrowRight, CalendarCheck, Lock, Mail } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { GOOGLE_CLIENT_ID } from "../lib/api-config";
 import { authApi } from "../lib/auth-api";
@@ -31,6 +31,7 @@ const parseGoogleCredentialEmail = (credential) => {
         return "";
     }
 };
+const authHeroImage = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80";
 export function Auth() {
     const [searchParams, setSearchParams] = useSearchParams();
     const modeParam = searchParams.get("mode");
@@ -496,12 +497,12 @@ export function Auth() {
         <div className="absolute bottom-[0%] left-[5%] h-[500px] w-[500px] rounded-full bg-indigo-300/[0.06] blur-[90px] dark:bg-[#4f7cff]/[0.10]"/>
       </div>
       <div className="relative mx-auto grid max-w-[1380px] overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl shadow-slate-300/40 lg:grid-cols-2 dark:border-white/10 dark:bg-[#0d1429] dark:shadow-black/50">
-        <div className="relative hidden min-h-[780px] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.28),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.16),transparent_26%),linear-gradient(155deg,#071126_0%,#0b1b4e_45%,#09142f_100%)] lg:block">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_40%)]"/>
-          <div className="absolute left-[12%] top-[12%] h-40 w-40 rounded-full border border-white/10 bg-white/5"/>
-          <div className="absolute right-[10%] top-[18%] h-28 w-28 rounded-3xl border border-cyan-200/20 bg-cyan-300/10 backdrop-blur-sm"/>
-          <div className="absolute bottom-[14%] left-[10%] h-52 w-52 rounded-full bg-blue-400/10 blur-3xl"/>
-          <div className="absolute bottom-[12%] right-[12%] h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl"/>
+        <div className="relative hidden min-h-[780px] overflow-hidden bg-[linear-gradient(160deg,#091431_0%,#10235b_42%,#0a1634_100%)] lg:block">
+          <img src={authHeroImage} alt="Modern event venue with keynote stage" className="absolute inset-x-8 top-24 h-[330px] w-[calc(100%-4rem)] rounded-[2rem] object-cover shadow-2xl"/>
+          <div className="absolute inset-x-8 top-24 h-[330px] rounded-[2rem] bg-[linear-gradient(180deg,rgba(6,16,36,0.02),rgba(6,16,36,0.44))]"/>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_24%)]"/>
+          <div className="absolute bottom-[12%] left-[8%] h-52 w-52 rounded-full bg-blue-400/10 blur-3xl"/>
+          <div className="absolute bottom-[10%] right-[10%] h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl"/>
           <div className="relative flex h-full flex-col justify-between p-10 text-white">
             <div className="flex items-center gap-3 font-display text-3xl font-bold">
               <div className="rounded-xl bg-white p-2 text-[#1132d4]">
@@ -509,14 +510,14 @@ export function Auth() {
               </div>
               EventZen
             </div>
-            <div className="max-w-md">
-              <p className="text-5xl leading-none opacity-50">"</p>
-              <h2 className="font-display text-4xl font-bold leading-tight">Plan your next big event seamlessly.</h2>
-              <p className="mt-5 text-2xl text-white/85">
-                Sign in to manage events, vendors, venues, tickets, and everything that powers the experience.
+            <div className="max-w-lg rounded-[2rem] border border-white/12 bg-white/6 p-8 backdrop-blur-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-cyan-100/80">Unified event operations</p>
+              <h2 className="mt-4 font-display text-5xl font-bold leading-[1.02]">Plan, launch, and run standout experiences.</h2>
+              <p className="mt-5 text-xl leading-9 text-white/82">
+                Sign in to coordinate venues, vendors, ticketing, approvals, bookings, and every operational detail in one workspace.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-xl">
+            <div className="flex items-center gap-3 text-lg text-white/90">
               <div className="flex -space-x-3">
                 {["AL", "MK", "SJ"].map((initials) => (<div key={initials} aria-hidden="true" className="flex size-10 items-center justify-center rounded-full border-2 border-[#1132d4] bg-white/15 text-sm font-semibold text-white backdrop-blur-sm">
                     {initials}
@@ -717,11 +718,6 @@ export function Auth() {
                     {mode === "signin" ? "Create account" : "Sign in"}
                   </button>
                 </p>
-
-                <div className="mt-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                  <CheckCircle2 className="size-4 shrink-0"/>
-                  Google ID tokens are sent directly to the Spring Boot auth-service. MFA code entry appears automatically when it is required during sign-in.
-                </div>
 
                 <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
                   <Link to="/" className="font-semibold text-[#1132d4]">

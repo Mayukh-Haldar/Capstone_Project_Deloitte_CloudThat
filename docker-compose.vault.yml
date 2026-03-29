@@ -1,0 +1,214 @@
+services:
+  vault:
+    image: hashicorp/vault:1.18
+    container_name: eventzen-vault
+    command:
+      - vault
+      - server
+      - -dev
+      - -dev-root-token-id=${VAULT_DEV_ROOT_TOKEN_ID:?Set by scripts/set-local-vault-secrets.ps1}
+      - -dev-listen-address=0.0.0.0:8200
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:?Set by scripts/set-local-vault-secrets.ps1}
+      VAULT_ADDR: http://127.0.0.1:8200
+    ports:
+      - "127.0.0.1:${VAULT_PORT:-8200}:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  vault-init:
+    image: hashicorp/vault:1.18
+    container_name: eventzen-vault-init
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:?Set by scripts/set-local-vault-secrets.ps1}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost}
+      AUTH_APP_BASE_URL: ${AUTH_APP_BASE_URL:-http://localhost}
+      AUTH_DB_URL: jdbc:mysql://mysql:3306/eventzen_users?createDatabaseIfNotExist=true&serverTimezone=UTC
+      AUTH_DB_USERNAME: ${AUTH_DB_USERNAME:-root}
+      AUTH_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set by scripts/set-local-vault-secrets.ps1}
+      EVENT_DB_URL: jdbc:mysql://mysql:3306/eventzen_events?createDatabaseIfNotExist=true&serverTimezone=UTC
+      EVENT_DB_USERNAME: ${EVENT_DB_USERNAME:-root}
+      EVENT_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set by scripts/set-local-vault-secrets.ps1}
+      FINANCE_DB_URL: jdbc:mysql://mysql:3306/eventzen_finance?createDatabaseIfNotExist=true&serverTimezone=UTC
+      FINANCE_DB_USERNAME: ${FINANCE_DB_USERNAME:-root}
+      FINANCE_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set by scripts/set-local-vault-secrets.ps1}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?Set by scripts/set-local-vault-secrets.ps1}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-eventzen-auth-service}
+      AUTH_CRYPTO_SECRET: ${AUTH_CRYPTO_SECRET:?Set by scripts/set-local-vault-secrets.ps1}
+      AUTH_BOOTSTRAP_ADMIN_EMAIL: ${AUTH_BOOTSTRAP_ADMIN_EMAIL:?Set by scripts/set-local-vault-secrets.ps1}
+      AUTH_BOOTSTRAP_ADMIN_PASSWORD: ${AUTH_BOOTSTRAP_ADMIN_PASSWORD:?Set by scripts/set-local-vault-secrets.ps1}
+      AUTH_BOOTSTRAP_ADMIN_FIRST_NAME: ${AUTH_BOOTSTRAP_ADMIN_FIRST_NAME:-System}
+      AUTH_BOOTSTRAP_ADMIN_LAST_NAME: ${AUTH_BOOTSTRAP_ADMIN_LAST_NAME:-Administrator}
+      AUTH_PASSWORD_RESET_MINUTES: ${AUTH_PASSWORD_RESET_MINUTES:-30}
+      AUTH_EMAIL_VERIFICATION_HOURS: ${AUTH_EMAIL_VERIFICATION_HOURS:-24}
+      AUTH_REQUIRE_VERIFIED_EMAIL_FOR_LOGIN: ${AUTH_REQUIRE_VERIFIED_EMAIL_FOR_LOGIN:-false}
+      AUTH_EXPOSE_DEBUG_TOKENS: ${AUTH_EXPOSE_DEBUG_TOKENS:-false}
+      AUTH_ALLOW_DEBUG_GOOGLE_TOKENS: ${AUTH_ALLOW_DEBUG_GOOGLE_TOKENS:-false}
+      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-}
+      AUTH_SMTP_HOST: ${AUTH_SMTP_HOST:-}
+      AUTH_SMTP_PORT: ${AUTH_SMTP_PORT:-587}
+      AUTH_SMTP_USERNAME: ${AUTH_SMTP_USERNAME-}
+      AUTH_SMTP_PASSWORD: ${AUTH_SMTP_PASSWORD-}
+      AUTH_SMTP_AUTH: ${AUTH_SMTP_AUTH:-true}
+      AUTH_SMTP_STARTTLS: ${AUTH_SMTP_STARTTLS:-true}
+      AUTH_SMTP_CONNECTION_TIMEOUT: ${AUTH_SMTP_CONNECTION_TIMEOUT:-5000}
+      AUTH_SMTP_TIMEOUT: ${AUTH_SMTP_TIMEOUT:-5000}
+      AUTH_SMTP_WRITE_TIMEOUT: ${AUTH_SMTP_WRITE_TIMEOUT:-5000}
+      AUTH_MAIL_FROM_EMAIL: ${AUTH_MAIL_FROM_EMAIL:-no-reply@eventzen.local}
+      AUTH_MAIL_FROM_NAME: ${AUTH_MAIL_FROM_NAME:-EventZen}
+      NOTIFICATION_INTERNAL_SERVICE_KEY: ${NOTIFICATION_INTERNAL_SERVICE_KEY:?Set by scripts/set-local-vault-secrets.ps1}
+      TICKETING_INTERNAL_SERVICE_KEY: ${TICKETING_INTERNAL_SERVICE_KEY:?Set by scripts/set-local-vault-secrets.ps1}
+      VENUE_VENDOR_INTERNAL_SERVICE_KEY: ${VENUE_VENDOR_INTERNAL_SERVICE_KEY:?Set by scripts/set-local-vault-secrets.ps1}
+      VENUE_VENDOR_MONGO_URI: ${VENUE_VENDOR_MONGO_URI:-mongodb://mongodb:27017/eventzen_venue_vendor}
+      NOTIFICATION_MONGO_URI: ${NOTIFICATION_MONGO_URI:-mongodb://mongodb:27017/eventzen_notifications}
+      TICKETING_MONGO_CONNECTION_STRING: ${TICKETING_MONGO_CONNECTION_STRING:-mongodb://mongodb:27017}
+      TICKETING_MONGO_DATABASE: ${TICKETING_MONGO_DATABASE:-eventzen_ticketing}
+      EVENT_STORAGE_ENABLED: ${EVENT_STORAGE_ENABLED:-true}
+      EVENT_STORAGE_ENDPOINT: http://minio:9000
+      EVENT_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-eventzenminio}
+      EVENT_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set by scripts/set-local-vault-secrets.ps1}
+      EVENT_STORAGE_BUCKET: ${MINIO_BUCKET:-eventzen-media}
+      EVENT_STORAGE_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-http://localhost:9000/eventzen-media}
+      EVENT_STORAGE_EVENT_BANNERS_PREFIX: ${MINIO_EVENT_BANNERS_PREFIX:-event-banners}
+      EVENT_STORAGE_SPEAKER_PHOTOS_PREFIX: ${MINIO_SPEAKER_PHOTOS_PREFIX:-speaker-photos}
+      MINIO_TICKET_PASSES_PREFIX: ${MINIO_TICKET_PASSES_PREFIX:-ticket-passes}
+      MINIO_INVOICES_PREFIX: ${MINIO_INVOICES_PREFIX:-invoices}
+      FINANCE_RAZORPAY_ENABLED: ${FINANCE_RAZORPAY_ENABLED:-false}
+      FINANCE_RAZORPAY_KEY_ID: ${FINANCE_RAZORPAY_KEY_ID-}
+      FINANCE_RAZORPAY_KEY_SECRET: ${FINANCE_RAZORPAY_KEY_SECRET-}
+      FINANCE_RAZORPAY_CHECKOUT_NAME: ${FINANCE_RAZORPAY_CHECKOUT_NAME:-EventZen}
+      FINANCE_RAZORPAY_CHECKOUT_DESCRIPTION: ${FINANCE_RAZORPAY_CHECKOUT_DESCRIPTION:-Event registration payment}
+      NOTIFICATION_SMTP_HOST: ${NOTIFICATION_SMTP_HOST:-}
+      NOTIFICATION_SMTP_PORT: ${NOTIFICATION_SMTP_PORT:-587}
+      NOTIFICATION_SMTP_USERNAME: ${NOTIFICATION_SMTP_USERNAME-}
+      NOTIFICATION_SMTP_PASSWORD: ${NOTIFICATION_SMTP_PASSWORD-}
+      NOTIFICATION_SMTP_AUTH: ${NOTIFICATION_SMTP_AUTH:-true}
+      NOTIFICATION_SMTP_STARTTLS: ${NOTIFICATION_SMTP_STARTTLS:-true}
+      NOTIFICATION_MAIL_FROM_EMAIL: ${NOTIFICATION_MAIL_FROM_EMAIL:-no-reply@eventzen.local}
+      NOTIFICATION_MAIL_FROM_NAME: ${NOTIFICATION_MAIL_FROM_NAME:-EventZen}
+      NOTIFICATION_FIREBASE_PROJECT_ID: ${NOTIFICATION_FIREBASE_PROJECT_ID-}
+      NOTIFICATION_FIREBASE_CLIENT_EMAIL: ${NOTIFICATION_FIREBASE_CLIENT_EMAIL-}
+      NOTIFICATION_FIREBASE_PRIVATE_KEY: ${NOTIFICATION_FIREBASE_PRIVATE_KEY-}
+      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8086
+      EVENT_SERVICE_BASE_URL: http://event-service:8082
+      VENUE_VENDOR_SERVICE_BASE_URL: http://venue-vendor-service:8083
+      VENUE_VENDOR_SERVICE_URL: http://venue-vendor-service:8083
+      TICKETING_SERVICE_BASE_URL: http://ticketing-service:8084
+      TICKETING_SERVICE_URL: http://ticketing-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8086
+      KAFKA_BROKERS: kafka:29092
+      REDIS_URL: redis://redis:6379
+      ENABLE_KAFKA: ${ENABLE_KAFKA:-false}
+      ENABLE_BULLMQ: ${ENABLE_BULLMQ:-false}
+      ENABLE_SOCKET_IO: ${ENABLE_SOCKET_IO:-true}
+      SEED_DEFAULT_TEMPLATES: ${SEED_DEFAULT_TEMPLATES:-true}
+      DEFAULT_NOTIFICATION_LOCALE: ${DEFAULT_NOTIFICATION_LOCALE:-en}
+      NOTIFICATION_RETENTION_DAYS: ${NOTIFICATION_RETENTION_DAYS:-90}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+    volumes:
+      - ./vault/scripts/bootstrap-local-vault.sh:/bootstrap/bootstrap-local-vault.sh:ro
+      - vault_approle:/vault/approle
+    entrypoint: ["/bin/sh", "/bootstrap/bootstrap-local-vault.sh"]
+    restart: "no"
+
+  vault-agent-local:
+    image: hashicorp/vault:1.18
+    container_name: eventzen-vault-agent
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:?Set by scripts/set-local-vault-secrets.ps1}
+    volumes:
+      - ./vault/scripts/prepare-agent-approle.sh:/vault/scripts/prepare-agent-approle.sh:ro
+      - ./vault/agent/local-agent.hcl:/vault/config/local-agent.hcl:ro
+      - ./vault/agent/eventzen.env.ctmpl:/vault/templates/eventzen.env.ctmpl:ro
+      - vault_approle:/vault/approle
+      - vault_rendered:/vault/rendered
+    entrypoint: ["/bin/sh", "-ec", "sh /vault/scripts/prepare-agent-approle.sh && exec vault agent -config=/vault/config/local-agent.hcl"]
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /vault/rendered/eventzen.env"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  auth-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: ""
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec java -XX:MaxRAMPercentage=75.0 -jar /app/app.jar"]
+
+  event-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: ""
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec java -XX:MaxRAMPercentage=75.0 -jar /app/app.jar"]
+
+  venue-vendor-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec npm start"]
+
+  ticketing-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec dotnet EventZen.Ticketing.Api.dll"]
+
+  finance-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: ""
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec java -XX:MaxRAMPercentage=75.0 -jar /app/app.jar"]
+
+  notification-service:
+    depends_on:
+      vault-agent-local:
+        condition: service_healthy
+    volumes:
+      - vault_rendered:/vault/secrets:ro
+    entrypoint: ["/bin/sh", "-ec", "tr -d '\r' < /vault/secrets/eventzen.env > /tmp/eventzen.env && . /tmp/eventzen.env && exec npm start"]
+
+volumes:
+  vault_approle:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=1m
+  vault_rendered:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=1m

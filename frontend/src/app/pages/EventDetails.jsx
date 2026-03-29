@@ -421,7 +421,7 @@ export function EventDetails() {
                   </div>)}
                 {alreadyRegistered && (<div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
                     <p className="font-semibold mb-1">Already Registered!</p>
-                    <p>You have successfully registered for this event. <Link to="/my/registrations" className="underline font-semibold">View your tickets</Link></p>
+                    <p>You have successfully registered for this event. <Link to="/my/tickets" className="underline font-semibold">View your tickets</Link></p>
                   </div>)}
                 {!canRegister && (<p className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
                     {registrationBlockedReason}

@@ -7,6 +7,28 @@ import { eventApi, getEventStatusLabel, isPubliclyDiscoverableEvent } from "../l
 import { ApiClientError } from "../lib/http-client";
 import { useAuthSession } from "../lib/auth-storage";
 import { ticketingApi } from "../lib/ticketing-api";
+const heroShowcaseImages = [
+    {
+        src: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&fm=webp&w=900&q=72",
+        alt: "Live concert event",
+        className: "row-span-2"
+    },
+    {
+        src: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&fm=webp&w=560&q=72",
+        alt: "Corporate conference",
+        className: ""
+    },
+    {
+        src: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&fm=webp&w=560&q=72",
+        alt: "Elegant wedding ceremony",
+        className: ""
+    },
+    {
+        src: "https://images.unsplash.com/photo-1478146059778-26028b07395a?auto=format&fit=crop&fm=webp&w=1080&q=72",
+        alt: "Gala dinner event",
+        className: "col-span-2"
+    }
+];
 const formatEventDate = (start, end) => {
     const startDate = new Date(start);
     const endDate = end ? new Date(end) : null;
@@ -174,8 +196,11 @@ export function Home() {
               {/* Blue-lit concert — tall left panel (row-span-2) */}
               <div className="row-span-2 overflow-hidden rounded-[1.25rem]">
                 <img
-                  src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=560&q=82&fit=crop"
-                  alt="Live concert event"
+                  src={heroShowcaseImages[0].src}
+                  alt={heroShowcaseImages[0].alt}
+                  fetchPriority="high"
+                  decoding="async"
+                  sizes="(min-width: 1024px) 22rem, 100vw"
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 />
               </div>
@@ -183,8 +208,10 @@ export function Home() {
               {/* Blue-lit tech conference — top center */}
               <div className="overflow-hidden rounded-[1.25rem]">
                 <img
-                  src="https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=380&q=82&fit=crop"
-                  alt="Corporate conference"
+                  src={heroShowcaseImages[1].src}
+                  alt={heroShowcaseImages[1].alt}
+                  decoding="async"
+                  sizes="(min-width: 1024px) 12rem, 50vw"
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 />
               </div>
@@ -192,8 +219,10 @@ export function Home() {
               {/* Cool-tone wedding — top right */}
               <div className="overflow-hidden rounded-[1.25rem]">
                 <img
-                  src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=380&q=82&fit=crop"
-                  alt="Elegant wedding ceremony"
+                  src={heroShowcaseImages[2].src}
+                  alt={heroShowcaseImages[2].alt}
+                  decoding="async"
+                  sizes="(min-width: 1024px) 12rem, 50vw"
                   className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                 />
               </div>
@@ -201,8 +230,10 @@ export function Home() {
               {/* Blue-atmosphere gala — wide bottom-right (col-span-2) */}
               <div className="col-span-2 overflow-hidden rounded-[1.25rem]">
                 <img
-                  src="https://images.unsplash.com/photo-1478146059778-26028b07395a?w=700&q=82&fit=crop"
-                  alt="Gala dinner event"
+                  src={heroShowcaseImages[3].src}
+                  alt={heroShowcaseImages[3].alt}
+                  decoding="async"
+                  sizes="(min-width: 1024px) 24rem, 100vw"
                   className="h-full w-full object-cover object-top transition-transform duration-700 hover:scale-105"
                 />
               </div>
@@ -371,6 +402,9 @@ export function Home() {
                               <img
                                 src={event.bannerImageUrl || getEventPlaceholderImage(event.id)}
                                 alt={event.title}
+                                loading="lazy"
+                                decoding="async"
+                                sizes="(min-width: 1024px) 28rem, 100vw"
                                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                               />
                               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.3),transparent_24%),linear-gradient(180deg,rgba(10,17,43,0.18),rgba(10,17,43,0.72))]" />
@@ -462,6 +496,8 @@ export function Home() {
                   <img
                     src={testimonials[testimonialsIndex].avatar}
                     alt={testimonials[testimonialsIndex].name}
+                    loading="lazy"
+                    decoding="async"
                     className="size-11 rounded-full border-2 border-white/70 object-cover shadow-xl transition-all duration-300 dark:border-white/20 hover:border-[#1132d4]/60 hover:shadow-[0_0_20px_rgba(17,50,212,0.55)] dark:hover:border-[#4f7cff]/60 dark:hover:shadow-[0_0_24px_rgba(79,124,255,0.7)]"
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#1132d4]/0 transition-all duration-300 hover:ring-[#1132d4]/40 dark:hover:ring-[#4f7cff]/50" />

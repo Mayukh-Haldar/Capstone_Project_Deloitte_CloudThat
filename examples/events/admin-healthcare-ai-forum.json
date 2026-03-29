@@ -1,0 +1,94 @@
+{
+  "title": "Healthcare AI Forum 2026",
+  "eventType": "Forum",
+  "category": "TECH",
+  "startTime": "2026-09-12T10:00",
+  "endTime": "2026-09-12T17:30",
+  "expectedAttendees": 320,
+  "capacity": 380,
+  "estimatedBudget": 860000,
+  "approvedBudget": 860000,
+  "tags": [
+    "healthcare",
+    "ai",
+    "clinical-ops",
+    "data-governance"
+  ],
+  "description": "A focused forum on clinical AI use cases, health data governance, operational safety, and responsible deployment in hospital systems.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80",
+  "venueName": "Harbor Expo Pavilion",
+  "agendaItems": [
+    {
+      "agendaTitle": "Clinical AI Registration Desk",
+      "type": "Check-in",
+      "startTime": "2026-09-12T10:00",
+      "endTime": "2026-09-12T10:20",
+      "description": "Registration, welcome desk, and attendee orientation."
+    },
+    {
+      "agendaTitle": "Keynote: Safe AI Rollouts in Care Delivery",
+      "type": "Keynote",
+      "startTime": "2026-09-12T10:20",
+      "endTime": "2026-09-12T11:00",
+      "description": "An executive keynote on trustworthy AI in hospital operations and diagnostics."
+    },
+    {
+      "agendaTitle": "Breakout: Data Governance and Audit Trails",
+      "type": "Breakout",
+      "startTime": "2026-09-12T13:15",
+      "endTime": "2026-09-12T14:15",
+      "description": "Breakout discussion on privacy controls, approvals, and traceability."
+    },
+    {
+      "agendaTitle": "Forum Close",
+      "type": "Closing",
+      "startTime": "2026-09-12T17:00",
+      "endTime": "2026-09-12T17:30",
+      "description": "Closing summary and cross-institution collaboration notes."
+    }
+  ],
+  "sessions": [
+    {
+      "title": "Safe AI Rollouts in Care Delivery",
+      "speakerName": "Dr. Kavya Menon",
+      "speakerRole": "Chief Medical Information Officer",
+      "speakerCompany": "Lifeline Health Network",
+      "room": "Ocean Hall",
+      "type": "Keynote",
+      "startTime": "2026-09-12T10:20",
+      "endTime": "2026-09-12T11:00",
+      "capacity": 380,
+      "description": "How health systems are approaching AI safety, clinician trust, and change adoption."
+    },
+    {
+      "title": "Data Governance and Audit Trails",
+      "speakerName": "Arjun Bhat",
+      "speakerRole": "Director of Data Governance",
+      "speakerCompany": "CareGrid Analytics",
+      "room": "Pier Gallery",
+      "type": "Breakout",
+      "startTime": "2026-09-12T13:15",
+      "endTime": "2026-09-12T14:15",
+      "capacity": 220,
+      "description": "Practical design patterns for healthcare data controls and review workflows."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "name": "Forum Access",
+      "tierCode": "GENERAL",
+      "price": 2200,
+      "quantity": 300,
+      "maxPerOrder": 4,
+      "description": "Full-day forum access including keynote and breakout sessions."
+    },
+    {
+      "name": "Clinical Leadership Pass",
+      "tierCode": "VIP",
+      "price": 4500,
+      "quantity": 80,
+      "maxPerOrder": 2,
+      "description": "Reserved seating, lunch roundtable, and post-forum networking access."
+    }
+  ]
+}

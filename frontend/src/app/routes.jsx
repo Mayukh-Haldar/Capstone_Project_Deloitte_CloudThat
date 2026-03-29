@@ -13,6 +13,7 @@ import { EventDetails } from "./pages/EventDetails";
 import { EventCheckout } from "./pages/EventCheckout";
 import { SeatSelection } from "./pages/SeatSelection";
 import { Auth } from "./pages/Auth";
+import { VenueBookingCheckout } from "./pages/VenueBookingCheckout";
 const CustomerPortal = lazy(() => import("./pages/CustomerPortal").then((module) => ({ default: module.CustomerPortal })));
 const VendorDashboard = lazy(() => import("./pages/VendorDashboard").then((module) => ({ default: module.VendorDashboard })));
 const Tickets = lazy(() => import("./pages/Tickets").then((module) => ({ default: module.Tickets })));
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
                                     { path: "vendor/dashboard", Component: VendorDashboard },
                                     { path: "vendor/events", Component: AdminEvents },
                                     { path: "vendor/venues", Component: Venues },
+                                    { path: "vendor/venues/checkout/:bookingId", Component: VenueBookingCheckout },
                                     { path: "vendor/check-in", Component: CheckIn },
                                     { path: "vendor/finance", Component: Finance },
                                     { path: "vendor/reports", Component: Reports },

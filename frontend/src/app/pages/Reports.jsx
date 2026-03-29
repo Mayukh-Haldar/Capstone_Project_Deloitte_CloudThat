@@ -108,12 +108,20 @@ export function Reports() {
         };
         void load();
     }, [isAdminPortal, session?.user.id]);
+    const getPortalRevenue = (report) => isAdminPortal ? (report.venueBookingRevenue || 0) : (report.ticketBookingRevenue || 0);
+    const getPortalExpenses = (report) => (report.totalExpenses || 0) + (report.venueBookingRevenue || 0);
+    const getPortalProfit = (report) => isAdminPortal ? getPortalRevenue(report) : getPortalRevenue(report) - getPortalExpenses(report);
     const summary = useMemo(() => ({
-        revenue: reports.reduce((sum, report) => sum + report.totalRevenue, 0),
-        expenses: reports.reduce((sum, report) => sum + report.totalExpenses, 0),
-        profit: reports.reduce((sum, report) => sum + report.netProfit, 0),
+        revenue: reports.reduce((sum, report) => sum + getPortalRevenue(report), 0),
+        ticketBookingRevenue: reports.reduce((sum, report) => sum + (report.ticketBookingRevenue || 0), 0),
+        venueBookingRevenue: reports.reduce((sum, report) => sum + (report.venueBookingRevenue || 0), 0),
+        expenses: isAdminPortal ? 0 : reports.reduce((sum, report) => sum + getPortalExpenses(report), 0),
+        profit: reports.reduce((sum, report) => sum + getPortalProfit(report), 0),
         events: reports.length
-    }), [reports]);
+    }), [reports, isAdminPortal]);
+    const portalRevenueDetailLabel = isAdminPortal ? "Venue booking revenue" : "Ticket booking revenue";
+    const portalRevenueDetailValue = isAdminPortal ? summary.venueBookingRevenue : summary.ticketBookingRevenue;
+    const expenseLabel = isAdminPortal ? "Expenses" : "Expenses + venue costs";
     // Compute real registrations trend data from check-in stats grouped by month
     const registrationData = useMemo(() => {
         const monthlyData = {};
@@ -137,7 +145,7 @@ export function Reports() {
             const event = events.find(e => e.id === report.eventId);
             if (event) {
                 const month = new Date(event.startTime).toLocaleDateString('en-US', { month: 'short' });
-                monthlyData[month] = (monthlyData[month] || 0) + report.totalRevenue;
+                monthlyData[month] = (monthlyData[month] || 0) + getPortalRevenue(report);
             }
         });
         // Sort by month order
@@ -145,10 +153,10 @@ export function Reports() {
         return monthOrder
             .filter(month => monthlyData[month])
             .map(month => ({ month, value: monthlyData[month] }));
-    }, [reports, events]);
+    }, [reports, events, isAdminPortal]);
     // Compute totals for chart headers
     const totalRegistrations = useMemo(() => checkInStats.reduce((sum, { stats }) => sum + stats.totalRegistrations, 0), [checkInStats]);
-    const totalRevenue = useMemo(() => reports.reduce((sum, report) => sum + report.totalRevenue, 0), [reports]);
+    const totalRevenue = useMemo(() => reports.reduce((sum, report) => sum + getPortalRevenue(report), 0), [reports, isAdminPortal]);
     const registrationTrend = useMemo(() => getTrendMetrics(registrationData.map((item) => item.value)), [registrationData]);
     const revenueTrend = useMemo(() => getTrendMetrics(revenueData.map((item) => item.value)), [revenueData]);
     const reportsAccent = "var(--reports-accent)";
@@ -158,15 +166,15 @@ export function Reports() {
             const summaryMetrics = {
                 events: summary.events,
                 revenue: formatCurrency(summary.revenue),
-                expenses: formatCurrency(summary.expenses),
+                expenses: formatCurrency(summary.expenses || 0),
                 profit: formatCurrency(summary.profit)
             };
             const reportRows = reports.map(report => ({
                 eventName: report.eventName,
                 eventId: report.eventId,
-                revenue: formatCurrency(report.totalRevenue),
-                expenses: formatCurrency(report.totalExpenses),
-                profit: formatCurrency(report.netProfit),
+                revenue: formatCurrency(getPortalRevenue(report)),
+                expenses: formatCurrency(isAdminPortal ? 0 : getPortalExpenses(report)),
+                profit: formatCurrency(getPortalProfit(report)),
                 transactions: report.recentTransactions.length
             }));
             await exportReportsToPDF(isAdminPortal ? "Admin" : "Vendor", summaryMetrics, registrationChartRef.current, revenueChartRef.current, reportRows);
@@ -186,7 +194,7 @@ export function Reports() {
             <p className="text-xs font-semibold tracking-[0.2em] text-[var(--reports-accent)]">{isAdminPortal ? "ADMIN PORTAL" : "VENDOR PORTAL"}</p>
             <h1 className="eventzen-page-title mt-2">{isAdminPortal ? "Admin Reports Dashboard" : "Vendor Reports Dashboard"}</h1>
             <p className="mt-2 text-lg text-slate-500 dark:text-slate-400">
-              {isAdminPortal ? "Cross-portfolio reporting for every live event." : "Performance and profitability reporting across your managed events."}
+              {isAdminPortal ? "Cross-portfolio reporting for every live event." : "Performance reporting where ticket sales count as revenue and venue booking payments count as cost."}
             </p>
           </div>
           <button onClick={handleExportPDF} disabled={exporting || loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed dark:border-white/10 dark:bg-[#111a33]">
@@ -201,7 +209,8 @@ export function Reports() {
           {[
             { label: "Tracked Events", value: summary.events, icon: Calendar },
             { label: "Revenue", value: formatCurrency(summary.revenue), icon: TrendingUp },
-            { label: "Expenses", value: formatCurrency(summary.expenses), icon: TrendingDown },
+            { label: portalRevenueDetailLabel, value: formatCurrency(portalRevenueDetailValue), icon: BarChart3 },
+            ...(!isAdminPortal ? [{ label: expenseLabel, value: formatCurrency(summary.expenses), icon: TrendingDown }] : []),
             { label: "Net Profit", value: formatCurrency(summary.profit), icon: Wallet }
         ].map((card) => (<article key={card.label} className="rounded-2xl border border-slate-300 bg-white p-5 dark:border-white/15 dark:bg-[#111a33]">
               <card.icon className="size-5 text-[var(--reports-accent)]"/>
@@ -279,24 +288,28 @@ export function Reports() {
                   <tr>
                     <th className="px-4 py-3">Event</th>
                     <th className="px-4 py-3">Revenue</th>
-                    <th className="px-4 py-3">Expenses</th>
+                    <th className="px-4 py-3">{isAdminPortal ? "Venue Bookings" : "Ticket Bookings"}</th>
+                    {!isAdminPortal && <th className="px-4 py-3">Expenses</th>}
                     <th className="px-4 py-3">Net Profit</th>
                     <th className="px-4 py-3">Transactions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (<tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">Loading reports...</td>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Loading reports...</td>
                     </tr>) : reports.length === 0 ? (<tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">No reports available yet.</td>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">No reports available yet.</td>
                     </tr>) : (reports.map((report) => (<tr key={report.eventId} className="border-t border-slate-200 dark:border-white/10">
                         <td className="px-4 py-4">
                           <p className="font-semibold">{report.eventName}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{report.eventId}</p>
                         </td>
-                        <td className="px-4 py-4 font-semibold">{formatCurrency(report.totalRevenue)}</td>
-                        <td className="px-4 py-4">{formatCurrency(report.totalExpenses)}</td>
-                        <td className="px-4 py-4">{formatCurrency(report.netProfit)}</td>
+                        <td className="px-4 py-4 font-semibold">{formatCurrency(getPortalRevenue(report))}</td>
+                        <td className="px-4 py-4">
+                          {formatCurrency(isAdminPortal ? report.venueBookingRevenue : report.ticketBookingRevenue)}
+                        </td>
+                        {!isAdminPortal && <td className="px-4 py-4">{formatCurrency(getPortalExpenses(report))}</td>}
+                        <td className="px-4 py-4">{formatCurrency(getPortalProfit(report))}</td>
                         <td className="px-4 py-4">{report.recentTransactions.length}</td>
                       </tr>)))}
                 </tbody>

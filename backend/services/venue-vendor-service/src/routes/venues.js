@@ -12,7 +12,8 @@ const {
   checkAvailabilitySchema,
   createBookingSchema,
   confirmVenueBookingPaymentSchema,
-  cancelVenueBookingSchema
+  cancelVenueBookingSchema,
+  deleteVenueBookingSchema
 } = require("../validators/venueValidators");
 const {
   createVenue,
@@ -24,7 +25,8 @@ const {
   checkAvailability,
   createBooking,
   confirmVenueBookingPayment,
-  cancelVenueBooking
+  cancelVenueBooking,
+  deleteVenueBooking
 } = require("../services/venueService");
 const { sendInAppNotification } = require("../services/notificationClient");
 const { notifyVenueBookingCancelled } = require("../services/eventClient");
@@ -132,7 +134,8 @@ router.post(
       createdByEmail: req.user.email,
       vendorId: req.body.vendorId,
       bookingOwnerId: req.body.bookingOwnerId,
-      bookingOwnerEmail: req.body.bookingOwnerEmail
+      bookingOwnerEmail: req.body.bookingOwnerEmail,
+      actor: req.user
     });
 
     if (booking.paymentStatus === "PENDING") {
@@ -255,6 +258,24 @@ router.post(
     });
 
     res.json(booking);
+  })
+);
+
+router.delete(
+  "/bookings/:bookingId",
+  requireAuth,
+  requireRoles([ROLE.ADMIN, ROLE.ORGANIZER, ROLE.VENDOR]),
+  validate(deleteVenueBookingSchema),
+  asyncHandler(async (req, res) => {
+    const booking = await deleteVenueBooking({
+      bookingId: req.params.bookingId,
+      actor: req.user
+    });
+
+    res.json({
+      bookingId: booking.bookingId,
+      deleted: true
+    });
   })
 );
 

@@ -41,6 +41,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
 });
+builder.Services.AddOpenApi("v1");
 
 builder.Services.AddSignalR();
 
@@ -74,6 +75,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors("eventzen");
 app.UseHttpMetrics();
 app.UseMiddleware<JwtAuthenticationMiddleware>();
+app.MapOpenApi("/openapi/{documentName}.json");
 app.MapControllers();
 app.MapHub<SeatHub>("/seat-hub");
 app.MapMetrics("/metrics");

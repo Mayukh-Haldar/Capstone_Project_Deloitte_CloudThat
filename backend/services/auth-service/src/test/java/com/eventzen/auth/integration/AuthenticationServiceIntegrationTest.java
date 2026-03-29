@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -135,12 +136,12 @@ class AuthenticationServiceIntegrationTest {
         );
         User user = userRepository.findByEmailIgnoreCase("reactivation.user@example.com").orElseThrow();
 
-        userManagementService.deactivateUser(user.getId());
+        userManagementService.deactivateUser(UUID.randomUUID(), user.getId());
 
         assertThatThrownBy(() -> authenticationService.login(new LoginRequest("reactivation.user@example.com", "Password@123", null), "127.0.0.1"))
                 .isInstanceOf(Exception.class);
 
-        userManagementService.reactivateUser(user.getId());
+        userManagementService.reactivateUser(UUID.randomUUID(), user.getId());
 
         AuthResponse login = authenticationService.login(new LoginRequest("reactivation.user@example.com", "Password@123", null), "127.0.0.1");
         assertThat(login.accessToken()).isNotBlank();
@@ -154,7 +155,7 @@ class AuthenticationServiceIntegrationTest {
         );
         User target = userRepository.findByEmailIgnoreCase("role.target@example.com").orElseThrow();
 
-        userManagementService.assignRoles(target.getId(), new AssignRolesRequest(Set.of(RoleName.ADMIN, RoleName.ORGANIZER)));
+        userManagementService.assignRoles(UUID.randomUUID(), target.getId(), new AssignRolesRequest(Set.of(RoleName.ADMIN, RoleName.ORGANIZER)));
 
         assertThat(userRoleRepository.findAllByUser_Id(target.getId()))
                 .extracting(userRole -> userRole.getRole().getName())

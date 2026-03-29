@@ -1,7 +1,6 @@
 import { AlertTriangle, Calendar, ChevronDown, Clock3, MapPin, QrCode, Search, Ticket as TicketIcon, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { LazyLoadSentinel } from "../components/LazyLoadSentinel";
 import { PageNavigation } from "../components/PageNavigation";
 import { ticketingApi } from "../lib/ticketing-api";
 import { eventApi, isDisabledEvent } from "../lib/event-api";
@@ -172,7 +171,7 @@ export function Tickets() {
               <span className="font-semibold text-slate-700 dark:text-slate-100">
                 Showing {pageStart + 1}-{Math.min(pageStart + PAGE_SIZE, filteredRegistrations.length)} of {filteredRegistrations.length} tickets
               </span>
-              <span>Scroll to the bottom or use pagination to browse more passes.</span>
+              <span>Use pagination below to browse more passes.</span>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -213,7 +212,6 @@ export function Tickets() {
           </div>
 
             <PageNavigation currentPage={safeCurrentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>
-            <LazyLoadSentinel enabled={safeCurrentPage < totalPages} loading={loading} onVisible={() => setCurrentPage((current) => Math.min(current + 1, totalPages))}/>
           </>)}
 
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white/85 p-5 text-sm text-slate-600 backdrop-blur-sm dark:border-white/10 dark:bg-[#0f1e3d]/60 dark:text-slate-300">

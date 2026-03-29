@@ -1,7 +1,14 @@
 import { Link } from "react-router";
-import { Calendar, Mail, Phone, MapPin, Twitter, Linkedin, Github } from "lucide-react";
+import { Calendar, Mail, Phone, MapPin, Instagram, Linkedin, Github } from "lucide-react";
+import { useAuthSession } from "../lib/auth-storage";
+import { getPortalHomePath, getPortalLabel, getPrimaryPortal } from "../lib/roles";
 export function Footer() {
     const currentYear = new Date().getFullYear();
+    const session = useAuthSession();
+    const primaryPortal = getPrimaryPortal(session);
+    const portalLink = primaryPortal
+        ? { label: `${getPortalLabel(primaryPortal)} Portal`, to: getPortalHomePath(primaryPortal) }
+        : { label: "Vendor Portal", to: "/vendor/dashboard" };
     return (<footer className="bg-background border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -17,13 +24,13 @@ export function Footer() {
               The most powerful event management platform designed to orchestrate excellence and reimagine how you plan world-class experiences.
             </p>
             <div className="flex gap-3">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="Twitter">
-                <Twitter className="size-4 text-foreground"/>
+              <a href="https://www.instagram.com/mayuk_hh" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="Instagram">
+                <Instagram className="size-4 text-foreground"/>
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="LinkedIn">
+              <a href="https://www.linkedin.com/in/mayukh-haldar/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="LinkedIn">
                 <Linkedin className="size-4 text-foreground"/>
               </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="GitHub">
+              <a href="https://github.com/Mayukh-Haldar" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-accent hover:bg-accent/80 transition-[background-color]" aria-label="GitHub">
                 <Github className="size-4 text-foreground"/>
               </a>
             </div>
@@ -49,8 +56,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/vendor/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
-                  Vendor Portal
+                <Link to={portalLink.to} className="text-sm text-muted-foreground hover:text-foreground">
+                  {portalLink.label}
                 </Link>
               </li>
             </ul>
@@ -73,11 +80,6 @@ export function Footer() {
               <li>
                 <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
                   Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
-                  API Documentation
                 </a>
               </li>
               <li>

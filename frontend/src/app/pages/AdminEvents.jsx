@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Ban, Calendar, CalendarRange, CheckCircle, CirclePlus, ImagePlus, MapPin, PencilLine, RefreshCw, Rocket, Ticket, Trash2, Unlock, Users, X } from "lucide-react";
+import { AlertTriangle, Ban, Calendar, CalendarRange, CheckCircle, CirclePlus, ImagePlus, MapPin, PencilLine, RefreshCw, Rocket, Search, Ticket, Trash2, Unlock, Users, X } from "lucide-react";
 import { useLocation } from "react-router";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../components/ui/alert-dialog";
+import { PageNavigation } from "../components/PageNavigation";
 import { DateTimeScheduler } from "../components/ui/date-time-scheduler";
 import { eventApi, getEventStatusLabel, isDisabledEvent, isPendingApprovalEvent } from "../lib/event-api";
 import { venueVendorApi } from "../lib/venue-vendor-api";
@@ -13,6 +14,7 @@ import { getEventPlaceholderImage } from "../lib/placeholder-images";
 const formatDate = (value) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 const formatCurrency = (value, currency = "INR") => new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(value || 0);
 const eventStatuses = ["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "REGISTRATION_CLOSED", "ONGOING", "COMPLETED", "ARCHIVED"];
+const EVENT_LIST_PAGE_SIZE = 6;
 const getStatusBadgeClass = (status) => {
     switch (status) {
         case "PENDING_APPROVAL":
@@ -118,6 +120,8 @@ const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file);
 });
 const normalizeMatchKey = (value) => String(value || "").trim().toLowerCase();
+const getEventCategoryKey = (event) => event.categoryId || (event.categoryName ? `name:${normalizeMatchKey(event.categoryName)}` : "");
+const getEventCategoryLabel = (event, categoryLookup) => event.categoryName || categoryLookup[event.categoryId]?.name || "Uncategorized";
 const toTextValue = (value) => value == null ? "" : String(value);
 const toNumericTextValue = (value) => value == null || value === "" ? "" : String(value);
 const toTagString = (value) => Array.isArray(value)
@@ -180,6 +184,11 @@ export function AdminEvents() {
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [windowFilter, setWindowFilter] = useState("ALL");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("ALL");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [sortBy, setSortBy] = useState("start-asc");
+    const [currentPage, setCurrentPage] = useState(1);
     const [selectedEventId, setSelectedEventId] = useState("");
     const [ticketTypesByEvent, setTicketTypesByEvent] = useState({});
     const [loadingTicketTypesFor, setLoadingTicketTypesFor] = useState("");
@@ -211,6 +220,7 @@ export function AdminEvents() {
     const [expectedAttendees, setExpectedAttendees] = useState("");
     const [capacity, setCapacity] = useState("");
     const [estimatedBudget, setEstimatedBudget] = useState("");
+    const [editorShowsApprovedBudget, setEditorShowsApprovedBudget] = useState(false);
     const [tags, setTags] = useState("");
     const [bannerImageUrl, setBannerImageUrl] = useState("");
     const [bannerPreview, setBannerPreview] = useState("");
@@ -255,23 +265,88 @@ export function AdminEvents() {
         }
     }, [isAdminPortal]);
     const venueLookup = useMemo(() => Object.fromEntries(venues.map((venue) => [venue.venueId, venue])), [venues]);
+    const categoryLookup = useMemo(() => Object.fromEntries(categories.map((category) => [category.id, category])), [categories]);
+    const categoryOptions = useMemo(() => {
+      const seen = new Map();
+
+      events.forEach((event) => {
+        const key = getEventCategoryKey(event);
+        if (!key || seen.has(key)) {
+          return;
+        }
+        seen.set(key, getEventCategoryLabel(event, categoryLookup));
+      });
+
+      return Array.from(seen.entries())
+        .map(([value, label]) => ({ value, label }))
+        .sort((left, right) => left.label.localeCompare(right.label));
+    }, [categoryLookup, events]);
+    const statusOptions = useMemo(() => Array.from(new Set(events.map((event) => event.status).filter(Boolean))), [events]);
     const filteredEvents = useMemo(() => {
         const now = new Date();
-        return events.filter((event) => {
+      const searchKey = normalizeMatchKey(searchQuery);
+
+      const nextEvents = events.filter((event) => {
             const eventDate = new Date(event.startTime);
             if (windowFilter === "UPCOMING") {
-                return eventDate >= now;
+          if (eventDate < now) {
+            return false;
+          }
             }
-            if (windowFilter === "PAST") {
-                return eventDate < now;
+        else if (windowFilter === "PAST") {
+          if (eventDate >= now) {
+            return false;
+          }
             }
-            return true;
-        });
-    }, [events, windowFilter]);
+        if (categoryFilter !== "ALL" && getEventCategoryKey(event) !== categoryFilter) {
+          return false;
+        }
+        if (statusFilter !== "ALL" && event.status !== statusFilter) {
+          return false;
+        }
+        if (searchKey) {
+          const eventSearchFields = [
+            event.title,
+            event.id,
+            event.description,
+            event.venueName,
+            event.venueCity,
+            event.eventType,
+            getEventCategoryLabel(event, categoryLookup),
+            Array.isArray(event.tags) ? event.tags.join(" ") : event.tags
+          ];
+
+          if (!eventSearchFields.some((value) => normalizeMatchKey(value).includes(searchKey))) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      nextEvents.sort((left, right) => {
+        if (sortBy === "start-desc") {
+          return new Date(right.startTime).getTime() - new Date(left.startTime).getTime();
+        }
+        if (sortBy === "title") {
+          return left.title.localeCompare(right.title);
+        }
+        if (sortBy === "status") {
+          return getEventStatusLabel(left.status).localeCompare(getEventStatusLabel(right.status));
+        }
+        return new Date(left.startTime).getTime() - new Date(right.startTime).getTime();
+      });
+
+      return nextEvents;
+    }, [events, windowFilter, categoryFilter, statusFilter, searchQuery, sortBy, categoryLookup]);
     const pendingEventRequests = useMemo(() => events
         .filter((event) => isPendingApprovalEvent(event))
         .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()), [events]);
-    const selectedEvent = useMemo(() => filteredEvents.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEventId) || null, [events, filteredEvents, selectedEventId]);
+    const totalPages = filteredEvents.length === 0 ? 0 : Math.ceil(filteredEvents.length / EVENT_LIST_PAGE_SIZE);
+    const safeCurrentPage = totalPages === 0 ? 1 : Math.min(currentPage, totalPages);
+    const pageStart = (safeCurrentPage - 1) * EVENT_LIST_PAGE_SIZE;
+    const pagedEvents = filteredEvents.slice(pageStart, pageStart + EVENT_LIST_PAGE_SIZE);
+    const selectedEvent = useMemo(() => filteredEvents.find((event) => event.id === selectedEventId) || null, [filteredEvents, selectedEventId]);
     const selectedVenue = venueId ? venueLookup[venueId] : undefined;
     const selectedEventTicketTypes = selectedEvent ? ticketTypesByEvent[selectedEvent.id] || [] : [];
     const getCapacitySnapshot = (event) => {
@@ -292,6 +367,7 @@ export function AdminEvents() {
         setExpectedAttendees("");
         setCapacity("");
         setEstimatedBudget("");
+        setEditorShowsApprovedBudget(false);
         setTags("");
         setBannerImageUrl("");
         setBannerPreview("");
@@ -341,7 +417,20 @@ export function AdminEvents() {
         }
     }, [selectedEvent?.id]);
     useEffect(() => {
-        const missingEventIds = filteredEvents
+      setCurrentPage(1);
+    }, [windowFilter, categoryFilter, statusFilter, searchQuery, sortBy]);
+    useEffect(() => {
+      if (filteredEvents.length === 0) {
+        setSelectedEventId("");
+        return;
+      }
+
+      if (!filteredEvents.some((event) => event.id === selectedEventId)) {
+        setSelectedEventId(filteredEvents[0].id);
+      }
+    }, [filteredEvents, selectedEventId]);
+    useEffect(() => {
+      const missingEventIds = pagedEvents
             .map((event) => event.id)
             .filter((eventId) => !ticketTypesByEvent[eventId]);
         if (missingEventIds.length === 0) {
@@ -356,7 +445,7 @@ export function AdminEvents() {
                 // Keep the event visible even if ticketing data is temporarily unavailable.
             }
         }));
-    }, [filteredEvents, ticketTypesByEvent]);
+          }, [pagedEvents, ticketTypesByEvent]);
     const handleBannerFileChange = async (file) => {
         if (!file) {
             setBannerPreview("");
@@ -472,7 +561,8 @@ export function AdminEvents() {
             setEndTime(toDateTimeLocalValue(event.endTime));
             setExpectedAttendees(String(event.expectedAttendees));
             setCapacity(String(event.capacity));
-            setEstimatedBudget(String(event.estimatedBudget ?? ""));
+            setEstimatedBudget(String(event.approvedBudget ?? event.estimatedBudget ?? ""));
+            setEditorShowsApprovedBudget(event.approvedBudget != null);
             setTags(event.tags.join(", "));
             setBannerImageUrl(event.bannerImageUrl || "");
             setBannerPreview("");
@@ -1059,6 +1149,62 @@ export function AdminEvents() {
             </div>
 
             <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+              <div className="mt-4 space-y-3">
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Search Events</span>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"/>
+                    <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search by title, venue, event ID, or keyword..." className="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-4 focus:ring-[#1132d4]/10 dark:border-white/15 dark:bg-[#0c152b]"/>
+                    {searchQuery && (<button type="button" onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200" aria-label="Clear event search">
+                        <X className="size-4"/>
+                      </button>)}
+                  </div>
+                </label>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="space-y-2">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Category</span>
+                    <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-4 focus:ring-[#1132d4]/10 dark:border-white/15 dark:bg-[#0c152b]">
+                      <option value="ALL">All Categories</option>
+                      {categoryOptions.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Status</span>
+                    <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-4 focus:ring-[#1132d4]/10 dark:border-white/15 dark:bg-[#0c152b]">
+                      <option value="ALL">All Statuses</option>
+                      {statusOptions.map((status) => (<option key={status} value={status}>{getEventStatusLabel(status)}</option>))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Sort</span>
+                    <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-4 focus:ring-[#1132d4]/10 dark:border-white/15 dark:bg-[#0c152b]">
+                      <option value="start-asc">Soonest First</option>
+                      <option value="start-desc">Latest First</option>
+                      <option value="title">Title</option>
+                      <option value="status">Status</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-[#0c152b] dark:text-slate-300">
+                <span className="font-semibold text-slate-700 dark:text-slate-100">
+                  Showing {filteredEvents.length === 0 ? 0 : pageStart + 1}-{Math.min(pageStart + EVENT_LIST_PAGE_SIZE, filteredEvents.length)} of {filteredEvents.length} events
+                </span>
+                {(searchQuery || categoryFilter !== "ALL" || statusFilter !== "ALL" || sortBy !== "start-asc" || windowFilter !== "ALL") && (<button type="button" onClick={() => {
+                setSearchQuery("");
+                setCategoryFilter("ALL");
+                setStatusFilter("ALL");
+                setSortBy("start-asc");
+                setWindowFilter("ALL");
+              }} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5">
+                    Reset Filters
+                  </button>)}
+              </div>
+
               <div className="hidden rounded-2xl bg-slate-50 px-5 py-4 text-xs uppercase tracking-wide text-slate-500 dark:bg-white/5 dark:text-slate-400 xl:grid xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(120px,0.8fr)_minmax(140px,0.9fr)] xl:gap-4">
                 <span>Event Details</span>
                 <span>Date & Time</span>
@@ -1071,7 +1217,7 @@ export function AdminEvents() {
                     Loading events...
                   </div>) : filteredEvents.length === 0 ? (<div className="rounded-2xl border border-dashed border-slate-300 px-5 py-8 text-sm text-slate-500 dark:border-white/15">
                     No events match the current filter.
-                  </div>) : (filteredEvents.map((event) => {
+                  </div>) : (pagedEvents.map((event) => {
                     const { bookedCount, totalCapacity } = getCapacitySnapshot(event);
                     return (<button key={event.id} type="button" onClick={() => setSelectedEventId(event.id)} className={`grid w-full gap-4 rounded-2xl border border-slate-200 px-5 py-5 text-left transition hover:border-[#1132d4]/30 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5 md:grid-cols-2 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(120px,0.8fr)_minmax(140px,0.9fr)] xl:items-center ${selectedEventId === event.id ? "border-[#1132d4]/30 bg-blue-50/70 shadow-sm dark:bg-[#16254c]" : "bg-white dark:bg-[#111a33]"}`}>
                       <div className="min-w-0">
@@ -1079,6 +1225,7 @@ export function AdminEvents() {
                         <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{event.title}</p>
                         <p className="mt-1 text-xs text-slate-500">{event.id}</p>
                         <p className="mt-2 truncate text-sm text-slate-500 dark:text-slate-300">{event.venueName || "Venue TBD"}</p>
+                        <p className="mt-1 text-xs text-slate-400">{getEventCategoryLabel(event, categoryLookup)}</p>
                       </div>
 
                       <div className="min-w-0 text-sm text-slate-600 dark:text-slate-300">
@@ -1108,6 +1255,18 @@ export function AdminEvents() {
                     </button>);
                   }))}
               </div>
+
+              {!loading && filteredEvents.length > 0 && (<>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-white/10 dark:bg-[#0f172e] dark:text-slate-300">
+                    <span className="font-semibold text-slate-700 dark:text-slate-100">
+                      Page {safeCurrentPage} of {totalPages}
+                    </span>
+                    <span>Use filters to narrow the board.</span>
+                  </div>
+                  <div className="mt-4">
+                    <PageNavigation currentPage={safeCurrentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>
+                  </div>
+                </>)}
             </div>
           </article>
 
@@ -1633,13 +1792,15 @@ export function AdminEvents() {
                     Loading event editor...
                   </div>
                 </div>) : (<div className="space-y-8 p-6">
-                {!isAdminPortal && editorMode === "create" && (<section className="rounded-2xl border border-slate-200 p-5 dark:border-white/10">
+                {editorMode === "create" && (<section className="rounded-2xl border border-slate-200 p-5 dark:border-white/10">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-semibold tracking-[0.2em] text-[#1132d4]">REQUEST INPUT</p>
+                        <p className="text-xs font-semibold tracking-[0.2em] text-[#1132d4]">{isAdminPortal ? "EVENT INPUT" : "REQUEST INPUT"}</p>
                         <h3 className="mt-2 text-lg font-bold">Import JSON Or Fill Manually</h3>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                          Upload a JSON event draft to prefill the request, then review and edit the same form manually before submitting.
+                          {isAdminPortal
+                            ? "Upload a JSON event draft to prefill the admin event form, then review and edit the same fields manually before creating the event."
+                            : "Upload a JSON event draft to prefill the request, then review and edit the same form manually before submitting."}
                         </p>
                       </div>
                     </div>
@@ -1657,7 +1818,9 @@ export function AdminEvents() {
                         <p className="font-semibold text-slate-900 dark:text-white">{importedJsonFileName || "Manual entry mode"}</p>
                         <p className="mt-2 text-slate-500">
                           {importedJsonFileName
-                            ? "The imported values now populate the form below. Review them and make any edits you want before submitting the request."
+                            ? isAdminPortal
+                              ? "The imported values now populate the form below. Review them and make any edits you want before continuing to the admin review and create step."
+                              : "The imported values now populate the form below. Review them and make any edits you want before submitting the request."
                             : "Skip the upload if you want to fill every field manually. Both paths use the same preview form below."}
                         </p>
                       </div>
@@ -1727,7 +1890,7 @@ export function AdminEvents() {
                       <input type="number" value={capacity} onChange={(event) => setCapacity(event.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-normal dark:border-white/15 dark:bg-[#09132a]"/>
                     </label>
                     <label className="space-y-1 text-sm font-medium">
-                      <span>Estimated Budget<span className="required-mark">*</span></span>
+                      <span>{editorShowsApprovedBudget ? "Approved Budget" : "Estimated Budget"}<span className="required-mark">*</span></span>
                       <input type="number" value={estimatedBudget} onChange={(event) => setEstimatedBudget(event.target.value)} className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-normal dark:border-white/15 dark:bg-[#09132a]"/>
                     </label>
                     <label className="space-y-1 text-sm font-medium">

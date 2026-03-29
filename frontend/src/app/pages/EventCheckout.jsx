@@ -408,7 +408,7 @@ export function EventCheckout() {
 
             {alreadyRegistered && (<div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 <p className="font-semibold mb-1">Already Registered</p>
-                <p>You have already registered for this event. <Link to="/my/registrations" className="underline font-semibold">View your tickets</Link></p>
+                <p>You have already registered for this event. <Link to="/my/tickets" className="underline font-semibold">View your tickets</Link></p>
               </div>)}
 
             {effectiveCheckoutMode === "AUTO" ? (<div className="mt-6 grid gap-3 sm:grid-cols-2">

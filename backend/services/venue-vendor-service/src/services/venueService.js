@@ -4,6 +4,7 @@ const { ApiError } = require("../utils/apiError");
 const errorCodes = require("../constants/errorCodes");
 const { buildPagination } = require("../utils/pagination");
 const { ROLE } = require("../constants/roles");
+const { getEventBookingOwner } = require("./eventClient");
 
 const uniq = (items) => [...new Set((items || []).filter(Boolean))];
 
@@ -130,28 +131,34 @@ const listVenueBookings = async (query, actor) => {
   if (query.upcomingOnly) {
     filters.bookingEnd = { $gte: new Date() };
   }
-  // Treat legacy bookings with no explicit status as active so they remain visible
-  // and consistent with the availability checks until they are cancelled.
-  filters.bookingStatus = { $ne: "CANCELLED" };
+  if (query.bookingStatus === "CANCELLED") {
+    filters.bookingStatus = "CANCELLED";
+  } else if (query.bookingStatus !== "ALL") {
+    // Treat legacy bookings with no explicit status as active so they remain visible
+    // and consistent with the availability checks until they are cancelled.
+    filters.bookingStatus = { $ne: "CANCELLED" };
+  }
 
   const actorRoles = actor?.roles || [];
   const isAdmin = actorRoles.includes(ROLE.ADMIN);
-  if (!isAdmin && actor?.id) {
-    filters.$or = [
-      { createdBy: actor.id },
-      { vendorId: actor.id },
-      { bookingOwnerId: actor.id }
-    ];
-  }
+  const baseItems = await VenueBooking.find(filters)
+    .sort({ bookingStart: 1, createdAt: -1 })
+    .lean();
 
-  const [items, total] = await Promise.all([
-    VenueBooking.find(filters)
-      .sort({ bookingStart: 1, createdAt: -1 })
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .lean(),
-    VenueBooking.countDocuments(filters)
-  ]);
+  const reconciledItems = await Promise.all(
+    baseItems.map((booking) => reconcileLegacyBooking(booking))
+  );
+
+  const visibleItems = !isAdmin && actor?.id
+    ? reconciledItems.filter((booking) =>
+        booking.createdBy === actor.id
+        || booking.vendorId === actor.id
+        || booking.bookingOwnerId === actor.id
+      )
+    : reconciledItems;
+
+  const total = visibleItems.length;
+  const items = visibleItems.slice(pagination.skip, pagination.skip + pagination.limit);
 
   return {
     items,
@@ -159,6 +166,48 @@ const listVenueBookings = async (query, actor) => {
     limit: pagination.limit,
     total
   };
+};
+
+const reconcileLegacyBooking = async (booking) => {
+  if (!booking) {
+    return booking;
+  }
+
+  const updates = {};
+  let eventOwner = null;
+
+  if ((!booking.bookingOwnerId || !booking.bookingOwnerEmail) && booking.eventId) {
+    eventOwner = await getEventBookingOwner(booking.eventId);
+    if (eventOwner?.organizerId && !booking.bookingOwnerId) {
+      updates.bookingOwnerId = eventOwner.organizerId;
+    }
+    if (eventOwner?.organizerEmail && !booking.bookingOwnerEmail) {
+      updates.bookingOwnerEmail = eventOwner.organizerEmail;
+    }
+  }
+
+  if (!booking.bookingStatus) {
+    updates.bookingStatus = "ACTIVE";
+  }
+
+  if (booking.paymentStatus == null || booking.paymentAmount == null || !booking.paymentCurrency) {
+    const venue = await Venue.findOne({ venueId: booking.venueId }).lean();
+    const computedAmount = venue
+      ? calculatePaymentAmount(venue, booking.bookingStart, booking.bookingEnd)
+      : Number(booking.paymentAmount || 0);
+    updates.paymentAmount = Number.isFinite(computedAmount) ? computedAmount : 0;
+    updates.paymentCurrency = booking.paymentCurrency || "INR";
+    updates.paymentStatus = booking.paymentId || booking.paidAt || Number(updates.paymentAmount) === 0
+      ? "PAID"
+      : "PENDING";
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return booking;
+  }
+
+  await VenueBooking.updateOne({ bookingId: booking.bookingId }, { $set: updates });
+  return { ...booking, ...updates };
 };
 
 const findVenueOrThrow = async (venueId) => {
@@ -305,7 +354,8 @@ const createBooking = async ({
   createdByEmail,
   vendorId,
   bookingOwnerId,
-  bookingOwnerEmail
+  bookingOwnerEmail,
+  actor
 }) => {
   const venue = await findVenueOrThrow(venueId);
   const normalizedHallIds = validateAndNormalizeHallIds(venue, hallIds);
@@ -361,7 +411,9 @@ const createBooking = async ({
     );
   }
 
-  const paymentAmount = calculatePaymentAmount(venue, bookingStart, bookingEnd);
+  const actorRoles = actor?.roles || [];
+  const isAdminBooking = actorRoles.includes(ROLE.ADMIN);
+  const paymentAmount = isAdminBooking ? 0 : calculatePaymentAmount(venue, bookingStart, bookingEnd);
   const normalizedOwnerId = bookingOwnerId || vendorId || createdBy;
   const normalizedOwnerEmail = bookingOwnerEmail || createdByEmail;
 
@@ -447,6 +499,44 @@ const cancelVenueBooking = async ({
   return booking.toObject();
 };
 
+const deleteVenueBooking = async ({
+  bookingId,
+  actor
+}) => {
+  const booking = await VenueBooking.findOne({ bookingId });
+  if (!booking) {
+    throw new ApiError(404, "NOT_FOUND", errorCodes.NOT_FOUND, "Venue booking not found");
+  }
+
+  if (booking.bookingStatus !== "CANCELLED") {
+    throw new ApiError(
+      409,
+      "CONFLICT",
+      errorCodes.CONFLICT,
+      "Only cancelled venue bookings can be removed permanently"
+    );
+  }
+
+  const actorRoles = actor?.roles || [];
+  const isAdmin = actorRoles.includes(ROLE.ADMIN);
+  const canManage = isAdmin
+    || actor?.id === booking.createdBy
+    || actor?.id === booking.bookingOwnerId
+    || actor?.id === booking.vendorId;
+
+  if (!canManage) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      errorCodes.AUTHORIZATION_ERROR,
+      "You do not have access to remove this booking"
+    );
+  }
+
+  await VenueBooking.deleteOne({ bookingId });
+  return booking.toObject();
+};
+
 module.exports = {
   createVenue,
   getVenueById,
@@ -457,5 +547,6 @@ module.exports = {
   checkAvailability,
   createBooking,
   confirmVenueBookingPayment,
-  cancelVenueBooking
+  cancelVenueBooking,
+  deleteVenueBooking
 };

@@ -168,6 +168,17 @@ public class EventService {
         return mapper.toDetail(findEvent(eventId));
     }
 
+    public EventBookingOwnerResponse getBookingOwner(UUID eventId) {
+        Event event = findEvent(eventId);
+        return new EventBookingOwnerResponse(
+                event.getId(),
+                event.getTitle(),
+                event.getStatus().name(),
+                event.getOrganizerId() == null ? null : event.getOrganizerId().toString(),
+                event.getOrganizerEmail()
+        );
+    }
+
     @Transactional
     public EventDetailResponse updateEvent(UUID eventId, UpdateEventRequest request, AuthenticatedUser actor, String authorization) {
         Event event = findEvent(eventId);
@@ -836,6 +847,9 @@ public class EventService {
     private Event findEvent(UUID eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventServiceException(HttpStatus.NOT_FOUND, "EVENT-404", "Event not found"));
+    }
+
+    public record EventBookingOwnerResponse(UUID eventId, String title, String status, String organizerId, String organizerEmail) {
     }
 
     private UUID resolveOrganizerId(UUID requestedOrganizerId, AuthenticatedUser actor) {

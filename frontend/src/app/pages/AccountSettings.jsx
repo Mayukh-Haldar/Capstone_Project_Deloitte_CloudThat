@@ -322,6 +322,18 @@ export function AccountSettings() {
                       Remove
                     </button>)}
                 </div>
+                <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 text-center shadow-sm dark:border-white/10 dark:bg-[#0d1429]/80">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Photo Preview</p>
+                  <Avatar className="mx-auto mt-3 size-24 border-4 border-white bg-slate-100 shadow-md dark:border-white/15 dark:bg-[#13244c]">
+                    <AvatarImage src={profilePhotoUrl || undefined} alt={`${fullName || "User"} preview`} className="object-cover"/>
+                    <AvatarFallback className="bg-[#1132d4]/10 text-lg font-semibold text-[#1132d4]">
+                      {avatarFallback}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="mt-3 max-w-[12rem] text-xs text-slate-500 dark:text-slate-400">
+                    This preview shows how your profile photo will appear inside the circular avatar.
+                  </p>
+                </div>
               </div>
             </div>
 

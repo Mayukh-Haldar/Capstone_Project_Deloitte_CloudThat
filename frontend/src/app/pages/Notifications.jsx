@@ -24,9 +24,100 @@ const channelPreferenceMap = {
 const preferenceChannels = ["EMAIL", "PUSH", "IN_APP", "WEBHOOK"];
 const PAGE_SIZE = 10;
 const NOTIFICATION_FETCH_SIZE = 100;
+const eventTypeLabels = {
+    "user.registered": "Account created",
+    "user.password.reset": "Password reset",
+    "registration.confirmed": "Registration confirmed",
+    "registration.cancelled": "Registration cancelled",
+    "event.published": "Event published",
+    "event.reminder.24h": "Event reminder: 24 hours",
+    "event.reminder.1h": "Event reminder: 1 hour",
+    "event.cancelled": "Event cancelled",
+    "event.updated": "Event update"
+};
+
+const statusLabels = {
+    READ: "Read",
+    UNREAD: "Unread",
+    SUCCESS: "Delivered",
+    FAILED: "Delivery failed",
+    PENDING: "Pending",
+    SENT: "Sent"
+};
+
+const deliveryMessageLabels = {
+    "In-app notification stored and emitted": "The in-app notification was delivered successfully.",
+    "Accepted by provider": "The delivery provider accepted this notification.",
+    "Queued for delivery": "The notification is queued for delivery.",
+    "Delivered to provider": "The notification was handed off to the delivery provider."
+};
 
 function isNotificationRead(notification) {
     return Boolean(notification?.readAt) || notification?.status === "READ";
+}
+
+function toTitleCase(value) {
+    return value
+        .split(" ")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+}
+
+function formatNotificationEventType(eventType) {
+    if (!eventType) {
+        return "General notification";
+    }
+
+    if (eventTypeLabels[eventType]) {
+        return eventTypeLabels[eventType];
+    }
+
+    return toTitleCase(eventType.replace(/[._-]+/g, " "));
+}
+
+function formatStatusLabel(status) {
+    if (!status) {
+        return "Unknown";
+    }
+
+    if (statusLabels[status]) {
+        return statusLabels[status];
+    }
+
+    return toTitleCase(status.replace(/_/g, " "));
+}
+
+function formatDeliveryProvider(provider, channel) {
+    if (provider === "SocketIO") {
+        return channel === "IN_APP" ? "In-app delivery" : "Socket delivery";
+    }
+
+    if (!provider) {
+        return "Delivery service";
+    }
+
+    return provider;
+}
+
+function formatDeliveryMessage(log) {
+    if (log?.responseMessage && deliveryMessageLabels[log.responseMessage]) {
+        return deliveryMessageLabels[log.responseMessage];
+    }
+
+    if (log?.responseMessage) {
+        return log.responseMessage;
+    }
+
+    if (log?.status === "SUCCESS") {
+        return "This notification was delivered successfully.";
+    }
+
+    if (log?.status === "FAILED") {
+        return "This notification could not be delivered.";
+    }
+
+    return "Delivery details are not available.";
 }
 
 function getNotificationHtmlDocument(notification) {
@@ -248,7 +339,7 @@ export function Notifications() {
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold">Channel Preferences</h2>
-                                <p className="text-sm text-slate-500">Updates `POST /api/v1/notifications/preferences`</p>
+                                    <p className="text-sm text-slate-500">Choose which notification channels stay active for your account.</p>
                             </div>
                         </div>
 
@@ -285,7 +376,7 @@ export function Notifications() {
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-xl font-bold">Recent Notifications</h2>
-                                <p className="text-sm text-slate-500">Backed by `GET /api/v1/notifications`</p>
+                                <p className="text-sm text-slate-500">Review your latest alerts and track recent delivery activity.</p>
                             </div>
                             <button
                                 type="button"
@@ -322,7 +413,7 @@ export function Notifications() {
                                                     </div>
                                                     <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{item.body}</p>
                                                     <p className="mt-2 text-xs text-slate-500">
-                                                        {new Date(item.createdAt).toLocaleString()} · {item.eventType}
+                                                        {new Date(item.createdAt).toLocaleString()} · {formatNotificationEventType(item.eventType)}
                                                     </p>
                                                 </div>
                                             </button>
@@ -420,11 +511,11 @@ export function Notifications() {
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="rounded-2xl border border-white/10 bg-[#0b1738] p-4">
                                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Event Type</p>
-                                            <p className="mt-2 text-sm text-slate-100">{selectedNotification.eventType}</p>
+                                            <p className="mt-2 text-sm text-slate-100">{formatNotificationEventType(selectedNotification.eventType)}</p>
                                         </div>
                                         <div className="rounded-2xl border border-white/10 bg-[#0b1738] p-4">
                                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Status</p>
-                                            <p className="mt-2 text-sm text-slate-100">{selectedNotification.status}</p>
+                                            <p className="mt-2 text-sm text-slate-100">{formatStatusLabel(selectedNotification.status)}</p>
                                         </div>
                                     </div>
 
@@ -435,12 +526,12 @@ export function Notifications() {
                                                 {selectedNotification.deliveryLogs.map((log, index) => (
                                                     <div key={`${log.channel}-${log.sentAt}-${index}`} className="rounded-xl border border-white/10 bg-[#08122d] p-3">
                                                         <p className="text-sm font-semibold text-slate-100">
-                                                            {channelMeta[log.channel]?.label || log.channel} · {log.status}
+                                                            {channelMeta[log.channel]?.label || log.channel} · {formatStatusLabel(log.status)}
                                                         </p>
                                                         <p className="mt-1 text-xs text-slate-400">
-                                                            {log.provider || "Unknown provider"} · {new Date(log.sentAt).toLocaleString()}
+                                                            {formatDeliveryProvider(log.provider, log.channel)} · {new Date(log.sentAt).toLocaleString()}
                                                         </p>
-                                                        {log.responseMessage && <p className="mt-2 text-sm text-slate-200">{log.responseMessage}</p>}
+                                                        <p className="mt-2 text-sm text-slate-200">{formatDeliveryMessage(log)}</p>
                                                     </div>
                                                 ))}
                                             </div>

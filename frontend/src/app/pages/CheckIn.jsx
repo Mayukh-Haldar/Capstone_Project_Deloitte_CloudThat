@@ -17,6 +17,8 @@ export function CheckIn() {
     const [events, setEvents] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState("");
     const [stats, setStats] = useState(null);
+    const [selectedEventDetail, setSelectedEventDetail] = useState(null);
+    const [totalTicketCapacity, setTotalTicketCapacity] = useState(null);
     const [qrPayload, setQrPayload] = useState("");
     const [scanMessage, setScanMessage] = useState("");
     const [loading, setLoading] = useState(true);
@@ -63,7 +65,15 @@ export function CheckIn() {
         }
         const loadStats = async () => {
             try {
-                setStats(await ticketingApi.getCheckInStats(selectedEventId));
+                const [statsResult, detailResult, ticketTypesResult] = await Promise.all([
+                    ticketingApi.getCheckInStats(selectedEventId),
+                    eventApi.getEvent(selectedEventId).catch(() => null),
+                    ticketingApi.listTicketTypes(selectedEventId).catch(() => [])
+                ]);
+                setStats(statsResult);
+                setSelectedEventDetail(detailResult);
+                const cap = (ticketTypesResult || []).reduce((sum, tt) => sum + (tt.totalQuantity ?? 0), 0);
+                setTotalTicketCapacity(cap > 0 ? cap : null);
             }
             catch (err) {
                 setScanMessage(err instanceof ApiClientError ? err.message : "Unable to load check-in stats.");
@@ -219,13 +229,23 @@ export function CheckIn() {
             return;
         }
         try {
-            setStats(await ticketingApi.getCheckInStats(selectedEventId));
+            const [statsResult, detailResult, ticketTypesResult] = await Promise.all([
+                ticketingApi.getCheckInStats(selectedEventId),
+                eventApi.getEvent(selectedEventId).catch(() => null),
+                ticketingApi.listTicketTypes(selectedEventId).catch(() => [])
+            ]);
+            setStats(statsResult);
+            setSelectedEventDetail(detailResult);
+            const cap = (ticketTypesResult || []).reduce((sum, tt) => sum + (tt.totalQuantity ?? 0), 0);
+            setTotalTicketCapacity(cap > 0 ? cap : null);
         }
         catch (err) {
             setScanMessage(err instanceof ApiClientError ? err.message : "Unable to refresh check-in stats.");
         }
     };
     const selectedEvent = events.find((eventItem) => eventItem.id === selectedEventId);
+    const liveEvent = selectedEventDetail?.event ?? selectedEvent;
+    const displayCapacity = totalTicketCapacity !== null ? totalTicketCapacity : (selectedEvent?.capacity ?? 0);
     const consoleViews = [
         { id: "scanner", label: "Scanner", icon: QrCode },
         { id: "guest-list", label: "Guest List", icon: Users },
@@ -285,19 +305,19 @@ export function CheckIn() {
                     <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <CalendarDays className="size-4"/> Event Window
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{new Date(selectedEvent.startTime).toLocaleString()}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{new Date(liveEvent.startTime).toLocaleString()}</p>
                   </div>
                   <div className="rounded-2xl border border-black/10 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
                     <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <Users className="size-4"/> Capacity
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{selectedEvent.capacity} seats</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{displayCapacity} seats</p>
                   </div>
                   <div className="rounded-2xl border border-black/10 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
                     <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <BarChart3 className="size-4"/> Status
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{getEventStatusLabel(selectedEvent.status)}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{getEventStatusLabel(liveEvent.status)}</p>
                   </div>
                 </div>)}
             </div>

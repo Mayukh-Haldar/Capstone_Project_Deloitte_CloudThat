@@ -67,8 +67,14 @@ const updateContractStatus = async ({ contractId, contractStatus }) => {
   return contract;
 };
 
+const listVendorEventIds = async (vendorId) => {
+  const contracts = await VendorContract.find({ vendorId }).select("eventId").lean();
+  return contracts.map((c) => c.eventId);
+};
+
 module.exports = {
   hireVendorForEvent,
   updateContractStatus,
-  isValidContractTransition
+  isValidContractTransition,
+  listVendorEventIds
 };

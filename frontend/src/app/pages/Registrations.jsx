@@ -1,7 +1,6 @@
 import { Calendar, ChevronDown, CircleCheck, Clock3, Download, Search, Ticket, Eye, EyeOff, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { LazyLoadSentinel } from "../components/LazyLoadSentinel";
 import { PageNavigation } from "../components/PageNavigation";
 import { financeApi } from "../lib/finance-api";
 import { ticketingApi } from "../lib/ticketing-api";
@@ -361,10 +360,9 @@ export function Registrations() {
               <span className="font-semibold text-slate-700 dark:text-slate-100">
                 Showing {pageStart + 1}-{Math.min(pageStart + PAGE_SIZE, filteredRegistrations.length)} of {filteredRegistrations.length} registrations
               </span>
-              <span>More rows load automatically as you reach the bottom.</span>
+              <span>Use pagination below to browse more rows.</span>
             </div>
             <PageNavigation currentPage={safeCurrentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>
-            <LazyLoadSentinel enabled={safeCurrentPage < totalPages} loading={loading} onVisible={() => setCurrentPage((current) => Math.min(current + 1, totalPages))}/>
           </>)}
 
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-600 dark:border-white/15 dark:bg-[#0f172e] dark:text-slate-300">
@@ -372,11 +370,11 @@ export function Registrations() {
             <Clock3 className="size-4"/> Need to modify a registration?
           </p>
           <p className="mt-2">
-            Cancellations update the ticket inventory and can automatically promote the next attendee from the waitlist.
-            Use the "Show Cancelled" toggle to view cancelled registrations and permanently remove them from your history.
+              Cancellations update the ticket inventory.
+              Use the "Show Cancelled" toggle to view cancelled registrations and permanently remove them from your history.
           </p>
           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            <strong>Invoice availability:</strong> Invoices are generated for successful paid registrations and stored in MinIO, so they are available across refreshes and devices.
+              <strong>Invoice availability:</strong> Invoices are generated for successful paid registrations and are available across refreshes and devices.
             Free tickets don't generate invoices. If you don't see an invoice for a paid registration yet, the payment may still be reconciling.
           </p>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">

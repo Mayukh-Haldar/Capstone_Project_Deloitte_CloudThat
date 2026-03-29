@@ -1,0 +1,94 @@
+{
+  "title": "Education Digital Futures Expo 2026",
+  "eventType": "Expo",
+  "category": "EDUCATION",
+  "startTime": "2026-10-03T09:30",
+  "endTime": "2026-10-03T18:30",
+  "expectedAttendees": 900,
+  "capacity": 1100,
+  "estimatedBudget": 1480000,
+  "approvedBudget": 1480000,
+  "tags": [
+    "education",
+    "edtech",
+    "digital-learning",
+    "skills"
+  ],
+  "description": "A large-format expo for university leaders, edtech builders, and workforce development teams exploring the future of digital classrooms, credentialing, and lifelong learning systems.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=80",
+  "venueName": "Lotus Knowledge Arena",
+  "agendaItems": [
+    {
+      "agendaTitle": "Expo Entry and Partner Booths Open",
+      "type": "Expo",
+      "startTime": "2026-10-03T09:30",
+      "endTime": "2026-10-03T10:15",
+      "description": "Entry begins, partner showcases open, and demo zones go live."
+    },
+    {
+      "agendaTitle": "Opening Stage Session",
+      "type": "Opening",
+      "startTime": "2026-10-03T10:15",
+      "endTime": "2026-10-03T10:45",
+      "description": "Welcome address on digital-first education strategy and outcomes."
+    },
+    {
+      "agendaTitle": "EdTech Showcase Walkthrough",
+      "type": "Expo",
+      "startTime": "2026-10-03T12:00",
+      "endTime": "2026-10-03T14:00",
+      "description": "Live expo walkthrough highlighting learning systems, analytics, and content platforms."
+    },
+    {
+      "agendaTitle": "Closing Awards",
+      "type": "Closing",
+      "startTime": "2026-10-03T17:45",
+      "endTime": "2026-10-03T18:30",
+      "description": "Recognition for standout innovation showcases and institutional partnerships."
+    }
+  ],
+  "sessions": [
+    {
+      "title": "Digital-First Education Strategy",
+      "speakerName": "Prof. Mehul Shah",
+      "speakerRole": "Vice Chancellor",
+      "speakerCompany": "National Institute for Applied Learning",
+      "room": "Saffron Auditorium",
+      "type": "Opening",
+      "startTime": "2026-10-03T10:15",
+      "endTime": "2026-10-03T10:45",
+      "capacity": 700,
+      "description": "A strategic opening on transformation priorities in modern learning ecosystems."
+    },
+    {
+      "title": "Learning Platforms and Analytics Showcase",
+      "speakerName": "Ritika Paul",
+      "speakerRole": "Director, EdTech Partnerships",
+      "speakerCompany": "FutureClass Labs",
+      "room": "Jade Studio",
+      "type": "Expo",
+      "startTime": "2026-10-03T12:00",
+      "endTime": "2026-10-03T14:00",
+      "capacity": 260,
+      "description": "A product showcase featuring adaptive learning, analytics, and content systems."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "name": "Expo Entry Pass",
+      "tierCode": "GENERAL",
+      "price": 999,
+      "quantity": 900,
+      "maxPerOrder": 6,
+      "description": "General expo access across all showcase zones and stage sessions."
+    },
+    {
+      "name": "Institution Leader Pass",
+      "tierCode": "VIP",
+      "price": 2800,
+      "quantity": 200,
+      "maxPerOrder": 2,
+      "description": "Priority access, networking lounge entry, and closing awards seating."
+    }
+  ]
+}

@@ -2,15 +2,18 @@ apiVersion: 1
 
 datasources:
   - name: Prometheus
+    uid: eventzen-prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
   - name: Loki
+    uid: eventzen-loki
     type: loki
     access: proxy
     url: http://loki:3100
   - name: Tempo
+    uid: eventzen-tempo
     type: tempo
     access: proxy
     url: http://tempo:3200
@@ -18,4 +21,4 @@ datasources:
       nodeGraph:
         enabled: true
       serviceMap:
-        datasourceUid: Prometheus
+        datasourceUid: eventzen-prometheus

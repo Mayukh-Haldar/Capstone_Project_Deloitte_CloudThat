@@ -49,7 +49,8 @@ public class UserManagementService {
     }
 
     @Transactional
-    public UserResponse assignRoles(UUID userId, AssignRolesRequest request) {
+    public UserResponse assignRoles(UUID actorId, UUID userId, AssignRolesRequest request) {
+        assertAdminIsNotManagingOwnAccount(actorId, userId);
         User user = findUser(userId);
         List<Role> roles = roleRepository.findAllByNameIn(request.roles());
         if (roles.size() != request.roles().size()) {
@@ -64,12 +65,13 @@ public class UserManagementService {
     }
 
     @Transactional
-    public UserResponse grantVendorAccess(UUID userId) {
-        return assignRoles(userId, new AssignRolesRequest(Set.of(RoleName.ORGANIZER, RoleName.VENDOR)));
+    public UserResponse grantVendorAccess(UUID actorId, UUID userId) {
+        return assignRoles(actorId, userId, new AssignRolesRequest(Set.of(RoleName.ORGANIZER, RoleName.VENDOR)));
     }
 
     @Transactional
-    public void deactivateUser(UUID userId) {
+    public void deactivateUser(UUID actorId, UUID userId) {
+        assertAdminIsNotManagingOwnAccount(actorId, userId);
         User user = findUser(userId);
         user.deactivate();
         userRepository.save(user);
@@ -80,7 +82,8 @@ public class UserManagementService {
     }
 
     @Transactional
-    public void reactivateUser(UUID userId) {
+    public void reactivateUser(UUID actorId, UUID userId) {
+        assertAdminIsNotManagingOwnAccount(actorId, userId);
         User user = findUser(userId);
         if (user.getDeletedAt() != null) {
             throw new EventZenException(
@@ -95,7 +98,8 @@ public class UserManagementService {
     }
 
     @Transactional
-    public void gdprDelete(UUID userId) {
+    public void gdprDelete(UUID actorId, UUID userId) {
+        assertAdminIsNotManagingOwnAccount(actorId, userId);
         User user = findUser(userId);
         userRoleRepository.deleteAllByUser_Id(userId);
         refreshTokenRepository.findAllByUser_Id(userId).forEach(token -> {
@@ -109,5 +113,16 @@ public class UserManagementService {
     private User findUser(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new EventZenException(HttpStatus.NOT_FOUND, "BUSINESS_ERROR", "AUTH-1006", "User not found"));
+    }
+
+    private void assertAdminIsNotManagingOwnAccount(UUID actorId, UUID userId) {
+        if (actorId != null && actorId.equals(userId)) {
+            throw new EventZenException(
+                    HttpStatus.BAD_REQUEST,
+                    "BUSINESS_ERROR",
+                    "AUTH-1013",
+                    "Admins cannot change their own account status or roles"
+            );
+        }
     }
 }

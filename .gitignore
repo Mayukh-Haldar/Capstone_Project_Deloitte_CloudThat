@@ -23,6 +23,7 @@ Thumbs.db
 .env.*.local
 vendors.env
 env/
+.secrets/local-vault-secrets.dpapi
 /nginx/
 .branch-worktrees/
 
@@ -45,8 +46,11 @@ _zip_staging_source/
 
 # Local dependency/cache folders
 m2/
+.npm-cache/
 .dotnet-home/
 .dotnet/
+frontend/dist/
+backend/services/*/target/
 
 # Temporary deployment/runtime files
 *.pid

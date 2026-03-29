@@ -1,0 +1,26 @@
+{
+  "name": "Seaside Innovation Campus",
+  "address": "14 Marina Tech Park Road, ECR",
+  "city": "Chennai",
+  "capacity": 1800,
+  "dailyPrice": 132000,
+  "amenities": "Ocean-view lobby, Hybrid event streaming, Solar backup power, EV charging, Catering prep kitchen",
+  "images": [
+    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80",
+    "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1400&q=80"
+  ],
+  "halls": [
+    {
+      "name": "Coral Auditorium",
+      "capacity": 850
+    },
+    {
+      "name": "Harbor Forum",
+      "capacity": 500
+    },
+    {
+      "name": "Wave Labs",
+      "capacity": 220
+    }
+  ]
+}

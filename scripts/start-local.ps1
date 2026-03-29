@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $PSScriptRoot
 $envPath = Join-Path $repoRoot ".env"
 $composeFile = Join-Path $repoRoot "docker-compose.yml"
 
@@ -18,6 +18,30 @@ function Get-EnvLines {
     param([string]$Path)
 
     return [System.Collections.Generic.List[string]](Get-Content -LiteralPath $Path)
+}
+
+function Save-EnvLines {
+    param(
+        [string]$Path,
+        [System.Collections.Generic.List[string]]$Lines
+    )
+
+    $expectedLines = [string[]]$Lines
+    Set-Content -LiteralPath $Path -Value $expectedLines -Encoding ascii
+
+    # Verify the persisted file matches what we intended to write. This catches
+    # host-specific sync or permission issues where Set-Content reports success
+    # but the file on disk does not actually reflect the new values.
+    $persistedLines = [string[]](Get-Content -LiteralPath $Path)
+    if ($persistedLines.Length -ne $expectedLines.Length) {
+        throw ".env write verification failed: line count mismatch after saving $Path"
+    }
+
+    for ($i = 0; $i -lt $expectedLines.Length; $i++) {
+        if ($persistedLines[$i] -cne $expectedLines[$i]) {
+            throw ".env write verification failed at line $($i + 1) after saving $Path"
+        }
+    }
 }
 
 function Set-EnvValue {
@@ -53,6 +77,23 @@ function Get-EnvValue {
             if ([int]::TryParse($rawValue, [ref]$parsedValue)) {
                 return $parsedValue
             }
+        }
+    }
+
+    return $DefaultValue
+}
+
+function Get-EnvStringValue {
+    param(
+        [string[]]$Lines,
+        [string]$Key,
+        [string]$DefaultValue
+    )
+
+    $prefix = "$Key="
+    foreach ($line in $Lines) {
+        if ($line.StartsWith($prefix)) {
+            return $line.Substring($prefix.Length).Trim()
         }
     }
 
@@ -112,14 +153,23 @@ function Find-AvailablePort {
     param(
         [int]$PreferredPort,
         [System.Collections.Generic.List[object]]$ExcludedRanges,
-        [int]$FallbackStart
+        [int]$FallbackStart,
+        [System.Collections.Generic.HashSet[int]]$ReservedPorts
     )
 
-    if (-not (Test-PortExcluded -Port $PreferredPort -Ranges $ExcludedRanges) -and (Test-PortBindable -Port $PreferredPort)) {
+    if (
+        -not $ReservedPorts.Contains($PreferredPort) -and
+        -not (Test-PortExcluded -Port $PreferredPort -Ranges $ExcludedRanges) -and
+        (Test-PortBindable -Port $PreferredPort)
+    ) {
         return $PreferredPort
     }
 
     for ($candidate = $FallbackStart; $candidate -le 65535; $candidate++) {
+        if ($ReservedPorts.Contains($candidate)) {
+            continue
+        }
+
         if (Test-PortExcluded -Port $candidate -Ranges $ExcludedRanges) {
             continue
         }
@@ -146,6 +196,7 @@ $portSettings = @(
     @{ Key = "NGINX_PORT"; Default = 80; FallbackStart = 8080; Label = "Nginx" },
     @{ Key = "MYSQL_PORT"; Default = 13306; FallbackStart = 13306; Label = "MySQL" },
     @{ Key = "MONGODB_PORT"; Default = 27018; FallbackStart = 27018; Label = "MongoDB" },
+    @{ Key = "MINIO_API_PORT"; Default = 9000; FallbackStart = 19000; Label = "MinIO API" },
     @{ Key = "MINIO_CONSOLE_PORT"; Default = 9001; FallbackStart = 19001; Label = "MinIO Console" },
     @{ Key = "ZOOKEEPER_PORT"; Default = 2181; FallbackStart = 12181; Label = "Zookeeper" },
     @{ Key = "KAFKA_PORT"; Default = 9092; FallbackStart = 19092; Label = "Kafka" },
@@ -162,10 +213,17 @@ $portSettings = @(
 $envLines = Get-EnvLines -Path $envPath
 $excludedRanges = Get-ExcludedPortRanges
 $changes = New-Object System.Collections.Generic.List[object]
+$reservedPorts = [System.Collections.Generic.HashSet[int]]::new()
 
 foreach ($setting in $portSettings) {
     $currentPort = Get-EnvValue -Lines $envLines -Key $setting.Key -DefaultValue $setting.Default
-    $resolvedPort = Find-AvailablePort -PreferredPort $currentPort -ExcludedRanges $excludedRanges -FallbackStart $setting.FallbackStart
+    $resolvedPort = Find-AvailablePort `
+        -PreferredPort $currentPort `
+        -ExcludedRanges $excludedRanges `
+        -FallbackStart $setting.FallbackStart `
+        -ReservedPorts $reservedPorts
+
+    $reservedPorts.Add($resolvedPort) | Out-Null
 
     if ($resolvedPort -ne $currentPort) {
         Set-EnvValue -Lines $envLines -Key $setting.Key -Value $resolvedPort
@@ -180,10 +238,14 @@ foreach ($setting in $portSettings) {
 
 $nginxPort = Get-EnvValue -Lines $envLines -Key "NGINX_PORT" -DefaultValue 80
 $publicBaseUrl = Get-LocalhostUrl -Port $nginxPort
+$minioApiPort = Get-EnvValue -Lines $envLines -Key "MINIO_API_PORT" -DefaultValue 9000
+$minioBucket = Get-EnvStringValue -Lines $envLines -Key "MINIO_BUCKET" -DefaultValue "eventzen-media"
+$minioPublicBaseUrl = "$(Get-LocalhostUrl -Port $minioApiPort)/$minioBucket"
 
 Set-EnvValue -Lines $envLines -Key "FRONTEND_ORIGIN" -Value $publicBaseUrl
 Set-EnvValue -Lines $envLines -Key "AUTH_APP_BASE_URL" -Value $publicBaseUrl
 Set-EnvValue -Lines $envLines -Key "VITE_SITE_URL" -Value $publicBaseUrl
+Set-EnvValue -Lines $envLines -Key "MINIO_PUBLIC_BASE_URL" -Value $minioPublicBaseUrl
 
 if ($changes.Count -gt 0) {
     Write-Host "Updated .env with safe host ports:" -ForegroundColor Yellow
@@ -192,7 +254,7 @@ if ($changes.Count -gt 0) {
     }
 
     if (-not $DryRun) {
-        Set-Content -LiteralPath $envPath -Value $envLines -Encoding ascii
+        Save-EnvLines -Path $envPath -Lines $envLines
     }
 } else {
     Write-Host "All configured host ports are available." -ForegroundColor Green

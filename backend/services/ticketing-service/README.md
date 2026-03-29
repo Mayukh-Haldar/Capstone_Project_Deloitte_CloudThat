@@ -39,7 +39,7 @@ Recommended local values:
 ```powershell
 $env:Mongo__ConnectionString="mongodb://localhost:27017"
 $env:Mongo__DatabaseName="eventzen_ticketing"
-$env:Jwt__Secret="replace-with-test-jwt-secret"
+$env:Jwt__Secret="<set-via-local-secret-store>"
 $env:Jwt__Issuer="eventzen-auth-service"
 $env:EventService__BaseUrl="http://localhost:8082"
 ```

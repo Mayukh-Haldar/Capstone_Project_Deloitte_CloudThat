@@ -106,7 +106,7 @@ class AccountRequestServiceTest {
 
         assertThat(response.status()).isEqualTo(AccountRequestStatus.APPROVED);
         assertThat(response.adminComment()).isEqualTo("Approved for compliance");
-        verify(userManagementService).gdprDelete(user.getId());
+        verify(userManagementService).gdprDelete(adminUserId, user.getId());
         verify(notificationClient).sendInAppNotification(any(), any(String.class), any(String.class), any(String.class), any(String.class), any());
     }
 
@@ -128,7 +128,7 @@ class AccountRequestServiceTest {
 
         assertThat(response.status()).isEqualTo(AccountRequestStatus.REJECTED);
         assertThat(response.adminComment()).isEqualTo("Business need requires active account");
-        verify(userManagementService, never()).deactivateUser(any(UUID.class));
+        verify(userManagementService, never()).deactivateUser(any(UUID.class), any(UUID.class));
         verify(notificationClient).sendInAppNotification(any(), any(String.class), any(String.class), any(String.class), any(String.class), any());
     }
 
@@ -195,7 +195,7 @@ class AccountRequestServiceTest {
         );
 
         assertThat(response.status()).isEqualTo(AccountRequestStatus.APPROVED);
-        verify(userManagementService).grantVendorAccess(user.getId());
+        verify(userManagementService).grantVendorAccess(adminUserId, user.getId());
         verify(notificationClient).sendInAppNotification(any(), any(String.class), any(String.class), any(String.class), any(String.class), any());
     }
 }

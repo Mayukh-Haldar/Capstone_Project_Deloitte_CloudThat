@@ -53,6 +53,8 @@ export const venueVendorApi = {
             query.set("venueId", params.venueId);
         if (params?.eventId)
             query.set("eventId", params.eventId);
+        if (params?.bookingStatus)
+            query.set("bookingStatus", params.bookingStatus);
         if (typeof params?.upcomingOnly === "boolean")
             query.set("upcomingOnly", String(params.upcomingOnly));
         if (params?.page)
@@ -79,6 +81,14 @@ export const venueVendorApi = {
             url: venueVendorApiPath(`/venues/bookings/${bookingId}/cancel`),
             method: "POST",
             body: payload || {},
+            auth: true
+        });
+        return response.data;
+    },
+    async deleteBooking(bookingId) {
+        const response = await request({
+            url: venueVendorApiPath(`/venues/bookings/${bookingId}`),
+            method: "DELETE",
             auth: true
         });
         return response.data;
@@ -116,5 +126,12 @@ export const venueVendorApi = {
             auth: true
         });
         return response.data;
+    },
+    async getVendorEventIds(vendorId) {
+        const response = await request({
+            url: venueVendorApiPath(`/vendors/${vendorId}/events`),
+            auth: true
+        });
+        return response.data.eventIds;
     }
 };

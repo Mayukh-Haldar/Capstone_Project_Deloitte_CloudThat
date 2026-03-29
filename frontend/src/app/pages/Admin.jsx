@@ -8,6 +8,8 @@ import { eventApi } from "../lib/event-api";
 import { ApiClientError } from "../lib/http-client";
 import { toBackendRolesForPortal } from "../lib/roles";
 import { ticketingApi } from "../lib/ticketing-api";
+import { venueVendorApi } from "../lib/venue-vendor-api";
+const vendorServiceCategories = ["CATERING", "AV", "DECOR", "SECURITY", "PHOTOGRAPHY"];
 const portalOptions = ["ADMIN", "VENDOR", "CUSTOMER"];
 const rowLimitOptions = ["5", "10", "20", "ALL"];
 const statusTone = {
@@ -95,6 +97,7 @@ const directActionCopy = {
 };
 const isGdprDeletedUser = (user) => Boolean(user.deletedAt);
 export function Admin() {
+    const [currentUserId, setCurrentUserId] = useState(null);
     const [users, setUsers] = useState([]);
     const [requests, setRequests] = useState([]);
     const [events, setEvents] = useState([]);
@@ -116,6 +119,10 @@ export function Admin() {
     const [requestTypeFilter, setRequestTypeFilter] = useState("ALL");
     const [requestLimit, setRequestLimit] = useState("5");
     const [pendingDirectAction, setPendingDirectAction] = useState(null);
+    const [vendorCatalogPending, setVendorCatalogPending] = useState(null);
+    const [catalogServiceType, setCatalogServiceType] = useState("");
+    const [catalogPhone, setCatalogPhone] = useState("");
+    const [catalogSubmitting, setCatalogSubmitting] = useState(false);
     const handleError = (err) => {
         if (err instanceof ApiClientError) {
             setError(err.message);
@@ -143,14 +150,18 @@ export function Admin() {
             if (userPage) {
                 setUsers(userPage.content);
                 setPortalDrafts(Object.fromEntries(userPage.content.map((user) => [user.id, rolesToPortal(user.roles)])));
+                const currentUser = await authApi.me().catch(() => null);
+                setCurrentUserId(currentUser?.id || null);
             }
             else if (fallbackCurrentUser) {
                 setUsers([fallbackCurrentUser]);
                 setPortalDrafts({ [fallbackCurrentUser.id]: rolesToPortal(fallbackCurrentUser.roles) });
+                setCurrentUserId(fallbackCurrentUser.id);
             }
             else {
                 setUsers([]);
                 setPortalDrafts({});
+                setCurrentUserId(null);
             }
             if (requestItems) {
                 setRequests(requestItems);
@@ -255,6 +266,11 @@ export function Admin() {
             const updated = await authApi.assignRoles(user.id, toBackendRolesForPortal(nextPortal));
             setUsers((current) => current.map((item) => (item.id === user.id ? updated : item)));
             setMessage(`Role updated for ${updated.firstName} ${updated.lastName}.`);
+            if (nextPortal === "VENDOR") {
+                setVendorCatalogPending({ name: `${updated.firstName} ${updated.lastName}`, email: updated.email });
+                setCatalogServiceType("");
+                setCatalogPhone("");
+            }
         }
         catch (err) {
             handleError(err);
@@ -295,6 +311,9 @@ export function Admin() {
             setRequests((current) => current.map((item) => (item.id === request.id ? updated : item)));
             if (status === "APPROVED") {
                 await loadDashboard();
+                setVendorCatalogPending({ name: `${request.user.firstName} ${request.user.lastName}`, email: request.user.email });
+                setCatalogServiceType("");
+                setCatalogPhone("");
             }
             setMessage(`Vendor request ${status.toLowerCase()} successfully.`);
         }
@@ -476,7 +495,9 @@ export function Admin() {
             <div className="space-y-4">
               {visibleUsers.length === 0 ? (<div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-white/20 dark:text-slate-300">
                   No users match the current filters.
-                </div>) : (visibleUsers.map((user) => (<article key={user.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+                </div>) : (visibleUsers.map((user) => {
+                    const isOwnAdminAccount = currentUserId === user.id && user.roles.includes("ADMIN");
+                    return (<article key={user.id} className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-12 border border-slate-200 bg-slate-100 shadow-sm dark:border-white/15 dark:bg-[#13244c]">
@@ -495,7 +516,12 @@ export function Admin() {
                       </span>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {portalOptions.map((portal) => (<button key={portal} type="button" onClick={() => setPortalDrafts((current) => ({ ...current, [user.id]: portal }))} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${portalDrafts[user.id] === portal ? "bg-[#1132d4] text-white" : "border border-slate-300 text-slate-600 dark:border-white/20 dark:text-slate-300"}`}>
+                      {portalOptions.map((portal) => (<button key={portal} type="button" onClick={() => {
+                                if (isOwnAdminAccount) {
+                                    return;
+                                }
+                                setPortalDrafts((current) => ({ ...current, [user.id]: portal }));
+                            }} disabled={isOwnAdminAccount} title={isOwnAdminAccount ? "Admins cannot change their own role" : undefined} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${portalDrafts[user.id] === portal ? "bg-[#1132d4] text-white" : "border border-slate-300 text-slate-600 dark:border-white/20 dark:text-slate-300"} ${isOwnAdminAccount ? "cursor-not-allowed opacity-45" : ""}`}>
                           {portal}
                         </button>))}
                     </div>
@@ -503,7 +529,7 @@ export function Admin() {
                       <p className="text-sm text-slate-500 dark:text-slate-300">
                         Current role: {user.roles.length > 0 ? rolesToPortal(user.roles) : "None"}
                       </p>
-                      <button type="button" onClick={() => void savePortalRole(user)} disabled={busyKey === `portal-${user.id}` || isGdprDeletedUser(user)} className="rounded-xl bg-[#1132d4] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                      <button type="button" onClick={() => void savePortalRole(user)} disabled={busyKey === `portal-${user.id}` || isGdprDeletedUser(user) || isOwnAdminAccount} title={isOwnAdminAccount ? "Admins cannot change their own role" : undefined} className="rounded-xl bg-[#1132d4] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                         Save Role
                       </button>
                     </div>
@@ -517,6 +543,8 @@ export function Admin() {
                           <p className="mt-1 text-xs text-amber-800 dark:text-amber-100/80">
                             {isGdprDeletedUser(user)
                 ? "This account has already been anonymized for GDPR erasure."
+                : isOwnAdminAccount
+                    ? "You can view your own admin account status here, but another admin must manage role, deactivation, reactivation, or deletion changes."
                 : "Sensitive actions require confirmation before they are applied."}
                           </p>
                         </div>
@@ -524,17 +552,18 @@ export function Admin() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         {isGdprDeletedUser(user) ? (<span className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                             GDPR Deleted
-                          </span>) : user.active ? (<button type="button" onClick={() => setPendingDirectAction({ user, action: "DEACTIVATE" })} disabled={busyKey === `direct-DEACTIVATE-${user.id}`} className="rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 disabled:opacity-60 dark:border-amber-500/30 dark:text-amber-200">
+                          </span>) : user.active ? (<button type="button" onClick={() => setPendingDirectAction({ user, action: "DEACTIVATE" })} disabled={busyKey === `direct-DEACTIVATE-${user.id}` || isOwnAdminAccount} title={isOwnAdminAccount ? "Admins cannot deactivate their own account" : undefined} className="rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 disabled:opacity-60 dark:border-amber-500/30 dark:text-amber-200">
                             {busyKey === `direct-DEACTIVATE-${user.id}` ? "Working..." : directActionCopy.DEACTIVATE.button}
-                          </button>) : (<button type="button" onClick={() => setPendingDirectAction({ user, action: "REACTIVATE" })} disabled={busyKey === `direct-REACTIVATE-${user.id}`} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                          </button>) : (<button type="button" onClick={() => setPendingDirectAction({ user, action: "REACTIVATE" })} disabled={busyKey === `direct-REACTIVATE-${user.id}` || isOwnAdminAccount} title={isOwnAdminAccount ? "Admins cannot reactivate their own account" : undefined} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                             {busyKey === `direct-REACTIVATE-${user.id}` ? "Working..." : directActionCopy.REACTIVATE.button}
                           </button>)}
-                        <button type="button" onClick={() => setPendingDirectAction({ user, action: "GDPR_DELETE" })} disabled={busyKey === `direct-GDPR_DELETE-${user.id}` || isGdprDeletedUser(user)} className="rounded-xl border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60 dark:border-rose-500/30 dark:text-rose-300">
+                        <button type="button" onClick={() => setPendingDirectAction({ user, action: "GDPR_DELETE" })} disabled={busyKey === `direct-GDPR_DELETE-${user.id}` || isGdprDeletedUser(user) || isOwnAdminAccount} title={isOwnAdminAccount ? "Admins cannot GDPR delete their own account" : undefined} className="rounded-xl border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 disabled:opacity-60 dark:border-rose-500/30 dark:text-rose-300">
                           {busyKey === `direct-GDPR_DELETE-${user.id}` ? "Working..." : directActionCopy.GDPR_DELETE.button}
                         </button>
                       </div>
                     </div>
-                  </article>)))}
+                  </article>);
+                }))}
             </div>
           </article>
 
@@ -613,6 +642,64 @@ export function Admin() {
           </article>
         </section>
       </div>
+
+      {vendorCatalogPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#111a33]">
+            <h2 className="text-lg font-bold">Register in Vendor Catalog</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{vendorCatalogPending.name}</span> ({vendorCatalogPending.email}) has been granted vendor access. Complete their catalog profile to make them discoverable.
+            </p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setCatalogSubmitting(true);
+              try {
+                await venueVendorApi.createVendor({
+                  vendorName: vendorCatalogPending.name,
+                  serviceType: catalogServiceType,
+                  email: vendorCatalogPending.email,
+                  phone: catalogPhone
+                });
+                setMessage(`${vendorCatalogPending.name} has been registered in the vendor catalog.`);
+                setVendorCatalogPending(null);
+              } catch (err) {
+                setError(err instanceof ApiClientError ? err.message : "Catalog registration failed.");
+                setVendorCatalogPending(null);
+              } finally {
+                setCatalogSubmitting(false);
+              }
+            }} className="mt-4 space-y-3">
+              <label className="block space-y-1 text-sm font-medium">
+                <span>Vendor Name</span>
+                <input readOnly value={vendorCatalogPending.name} className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:border-white/20 dark:bg-white/5 dark:text-slate-400"/>
+              </label>
+              <label className="block space-y-1 text-sm font-medium">
+                <span>Email</span>
+                <input readOnly value={vendorCatalogPending.email} className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500 dark:border-white/20 dark:bg-white/5 dark:text-slate-400"/>
+              </label>
+              <label className="block space-y-1 text-sm font-medium">
+                <span>Service Type <span className="text-rose-500">*</span></span>
+                <select required value={catalogServiceType} onChange={(e) => setCatalogServiceType(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-[#0f172e]">
+                  <option value="">Select a service type</option>
+                  {vendorServiceCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+              </label>
+              <label className="block space-y-1 text-sm font-medium">
+                <span>Phone <span className="text-rose-500">*</span></span>
+                <input required value={catalogPhone} onChange={(e) => setCatalogPhone(e.target.value)} placeholder="+91-90000-XXXXX" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-[#0f172e]"/>
+              </label>
+              <div className="flex gap-3 pt-1">
+                <button type="submit" disabled={catalogSubmitting} className="flex-1 rounded-xl bg-[#1132d4] py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                  {catalogSubmitting ? "Registering..." : "Register in Catalog"}
+                </button>
+                <button type="button" onClick={() => setVendorCatalogPending(null)} disabled={catalogSubmitting} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold dark:border-white/20">
+                  Skip
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={Boolean(pendingDirectAction)} onOpenChange={(open) => !open && setPendingDirectAction(null)}>
         <AlertDialogContent className="border-slate-200 bg-white dark:border-white/10 dark:bg-[#111a33]">

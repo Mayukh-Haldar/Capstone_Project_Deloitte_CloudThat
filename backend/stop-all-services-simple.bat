@@ -6,7 +6,7 @@ echo ========================================
 echo.
 
 echo Closing the 6 service CMD windows...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0stop-all-services.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\scripts\backend\stop-all-services.ps1"
 
 echo.
 echo ========================================

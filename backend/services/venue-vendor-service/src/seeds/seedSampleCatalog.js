@@ -1,10 +1,12 @@
 const { Venue } = require("../models/Venue");
 const { Vendor } = require("../models/Vendor");
 const { VenueBooking } = require("../models/VenueBooking");
+const { VendorContract } = require("../models/VendorContract");
 const {
   sampleVenues,
   sampleVendors,
-  sampleBookings
+  sampleBookings,
+  sampleContracts
 } = require("./sampleCatalog");
 
 const seedSampleCatalog = async () => {
@@ -40,6 +42,16 @@ const seedSampleCatalog = async () => {
       VenueBooking.findOneAndUpdate(
         { bookingId: booking.bookingId },
         { $set: booking },
+        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+      )
+    )
+  );
+
+  await Promise.all(
+    sampleContracts.map((contract) =>
+      VendorContract.findOneAndUpdate(
+        { contractId: contract.contractId },
+        { $set: contract },
         { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
       )
     )

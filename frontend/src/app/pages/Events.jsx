@@ -581,10 +581,14 @@ export function Events() {
               <span className="font-semibold text-slate-700 dark:text-slate-100">
                 Showing {totalEvents === 0 ? 0 : pageStart + 1}-{Math.min(pageStart + PAGE_SIZE, totalEvents)} of {totalEvents} events
               </span>
-              <span className="hidden text-slate-300 md:inline">|</span>
-              <span className="font-mono text-xs text-[#5770e6]">
-                {hasMoreSourceEvents ? "More events load as you browse" : "Redis: 60s cache TTL for event listings"}
-              </span>
+              {hasMoreSourceEvents ? (
+                <>
+                  <span className="hidden text-slate-300 md:inline">|</span>
+                  <span className="font-mono text-xs text-[#5770e6]">
+                    More events load as you browse
+                  </span>
+                </>
+              ) : null}
             </div>
 
             <label className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-300">
@@ -658,11 +662,7 @@ export function Events() {
             </div>
 
             {!focusedEventId && totalPages > 1 && (<PageNavigation className="pt-2" currentPage={safeCurrentPage} totalPages={totalPages} onPageChange={(page) => updateParams({ page: String(page) })}/>)}
-            {!focusedEventId && <LazyLoadSentinel enabled={hasMoreSourceEvents || safeCurrentPage < totalPages} loading={loadingMore} onVisible={() => {
-                if (safeCurrentPage < totalPages) {
-                    updateParams({ page: String(safeCurrentPage + 1) });
-                    return;
-                }
+            {!focusedEventId && <LazyLoadSentinel enabled={hasMoreSourceEvents && safeCurrentPage >= totalPages} loading={loadingMore} onVisible={() => {
                 if (hasMoreSourceEvents) {
                     updateParams({ page: String(safeCurrentPage + 1) });
                 }

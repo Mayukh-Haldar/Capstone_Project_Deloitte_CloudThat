@@ -118,10 +118,10 @@ public class AccountRequestService {
         ensurePending(accountRequest);
 
         switch (accountRequest.getType()) {
-            case DEACTIVATE -> userManagementService.deactivateUser(accountRequest.getUser().getId());
-            case REACTIVATE -> userManagementService.reactivateUser(accountRequest.getUser().getId());
-            case GDPR_DELETE -> userManagementService.gdprDelete(accountRequest.getUser().getId());
-            case VENDOR_ACCESS -> userManagementService.grantVendorAccess(accountRequest.getUser().getId());
+            case DEACTIVATE -> userManagementService.deactivateUser(adminUserId, accountRequest.getUser().getId());
+            case REACTIVATE -> userManagementService.reactivateUser(adminUserId, accountRequest.getUser().getId());
+            case GDPR_DELETE -> userManagementService.gdprDelete(adminUserId, accountRequest.getUser().getId());
+            case VENDOR_ACCESS -> userManagementService.grantVendorAccess(adminUserId, accountRequest.getUser().getId());
         }
 
         accountRequest.approve(adminUserId, request.adminComment());

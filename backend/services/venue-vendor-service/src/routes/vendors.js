@@ -9,6 +9,7 @@ const {
   createReviewSchema
 } = require("../validators/vendorValidators");
 const { createVendor, listVendors, addReview } = require("../services/vendorService");
+const { listVendorEventIds } = require("../services/contractService");
 
 const router = express.Router();
 
@@ -30,6 +31,16 @@ router.post(
   asyncHandler(async (req, res) => {
     const vendor = await createVendor(req.body);
     res.status(201).json(vendor);
+  })
+);
+
+router.get(
+  "/:id/events",
+  requireAuth,
+  requireRoles([ROLE.ADMIN, ROLE.ORGANIZER, ROLE.VENDOR]),
+  asyncHandler(async (req, res) => {
+    const eventIds = await listVendorEventIds(req.params.id);
+    res.json({ eventIds });
   })
 );
 

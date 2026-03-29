@@ -11,6 +11,7 @@ const healthRoutes = require("./routes/health");
 const { notFound } = require("./middleware/notFound");
 const { errorHandler } = require("./middleware/errorHandler");
 const { metricsHandler, metricsMiddleware } = require("./observability/metrics");
+const { buildOpenApiDocument } = require("./openapi");
 
 const app = express();
 
@@ -28,6 +29,9 @@ if (env.enableRequestLogs) {
 
 app.use(metricsMiddleware);
 app.get("/metrics", metricsHandler);
+app.get("/openapi.json", (_req, res) => {
+  res.json(buildOpenApiDocument());
+});
 app.use("/api/v1", healthRoutes);
 app.use("/api/v1/venues", venueRoutes);
 app.use("/api/v1/vendors", vendorRoutes);

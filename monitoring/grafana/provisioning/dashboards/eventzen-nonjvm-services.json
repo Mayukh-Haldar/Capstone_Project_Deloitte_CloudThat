@@ -1,0 +1,379 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Performance metrics for the Ticketing Service (.NET / prometheus-net) and Node.js services (Notification, Venue & Vendor).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "asDropdown": false, "icon": "external link", "includeVars": false, "keepTime": true, "targetBlank": false, "title": "Platform Overview", "type": "link", "url": "/d/eventzen-overview" }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Ticketing Service (.NET / ASP.NET Core)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "DOWN" }, "1": { "color": "green", "index": 0, "text": "UP" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "up{job=\"ticketing-service\"}", "instant": true, "legendFormat": "", "refId": "A" }],
+      "title": "Ticketing Service",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum(rate(http_request_duration_seconds_count{job=\"ticketing-service\"}[$__rate_interval]))", "legendFormat": "", "refId": "A" }],
+      "title": "Request Rate (req/s)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"ticketing-service\"}[$__rate_interval])))", "legendFormat": "", "refId": "A" }],
+      "title": "P95 Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 12, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "process_working_set_bytes{job=\"ticketing-service\"}", "legendFormat": "", "refId": "A" }],
+      "title": "Memory (Working Set)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 6,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (code) (rate(http_request_duration_seconds_count{job=\"ticketing-service\"}[$__rate_interval]))", "legendFormat": "HTTP {{code}}", "refId": "A" }
+      ],
+      "title": "HTTP Request Rate by Status Code",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 7,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"ticketing-service\"}[$__rate_interval])))", "legendFormat": "P99", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"ticketing-service\"}[$__rate_interval])))", "legendFormat": "P95", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"ticketing-service\"}[$__rate_interval])))", "legendFormat": "P50", "refId": "C" }
+      ],
+      "title": "Ticketing - Response Latency Percentiles",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 8,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "process_working_set_bytes{job=\"ticketing-service\"}", "legendFormat": "working set", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "dotnet_total_memory_bytes{job=\"ticketing-service\"}", "legendFormat": ".NET GC total", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "process_virtual_memory_bytes{job=\"ticketing-service\"}", "legendFormat": "virtual", "refId": "C" }
+      ],
+      "title": "Ticketing - Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 9,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "rate(process_cpu_seconds_total{job=\"ticketing-service\"}[$__rate_interval])", "legendFormat": "CPU", "refId": "A" }
+      ],
+      "title": "Ticketing - CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 10,
+      "title": "Node.js Services (Notification & Venue-Vendor)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "DOWN" }, "1": { "color": "green", "index": 0, "text": "UP" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 21 },
+      "id": 11,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "up{job=~\"notification-service|venue-vendor-service\"}", "instant": true, "legendFormat": "{{job}}", "refId": "A" }],
+      "title": "Node.js Services",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 12,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (status_code) (rate(eventzen_notification_http_request_duration_seconds_count{job=\"notification-service\"}[$__rate_interval]))", "legendFormat": "notification {{status_code}}", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "sum by (status_code) (rate(eventzen_venue_vendor_http_request_duration_seconds_count{job=\"venue-vendor-service\"}[$__rate_interval]))", "legendFormat": "venue-vendor {{status_code}}", "refId": "B" }
+      ],
+      "title": "Node.js - HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 13,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(eventzen_notification_http_request_duration_seconds_bucket{job=\"notification-service\"}[$__rate_interval])))", "legendFormat": "notification P95", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le) (rate(eventzen_venue_vendor_http_request_duration_seconds_bucket{job=\"venue-vendor-service\"}[$__rate_interval])))", "legendFormat": "venue-vendor P95", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.50, sum by (le) (rate(eventzen_notification_http_request_duration_seconds_bucket{job=\"notification-service\"}[$__rate_interval])))", "legendFormat": "notification P50", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "histogram_quantile(0.50, sum by (le) (rate(eventzen_venue_vendor_http_request_duration_seconds_bucket{job=\"venue-vendor-service\"}[$__rate_interval])))", "legendFormat": "venue-vendor P50", "refId": "D" }
+      ],
+      "title": "Node.js - Response Latency Percentiles",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 14,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_notification_nodejs_heap_size_used_bytes{job=\"notification-service\"}", "legendFormat": "notification heap used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_notification_nodejs_heap_size_total_bytes{job=\"notification-service\"}", "legendFormat": "notification heap total", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_venue_vendor_nodejs_heap_size_used_bytes{job=\"venue-vendor-service\"}", "legendFormat": "venue-vendor heap used", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_venue_vendor_nodejs_heap_size_total_bytes{job=\"venue-vendor-service\"}", "legendFormat": "venue-vendor heap total", "refId": "D" }
+      ],
+      "title": "Node.js - Heap Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 15,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_notification_nodejs_eventloop_lag_seconds{job=\"notification-service\"}", "legendFormat": "notification event loop lag", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_venue_vendor_nodejs_eventloop_lag_seconds{job=\"venue-vendor-service\"}", "legendFormat": "venue-vendor event loop lag", "refId": "B" }
+      ],
+      "title": "Node.js - Event Loop Lag",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 16,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "rate(eventzen_notification_process_cpu_seconds_total{job=\"notification-service\"}[$__rate_interval])", "legendFormat": "notification CPU", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "rate(eventzen_venue_vendor_process_cpu_seconds_total{job=\"venue-vendor-service\"}[$__rate_interval])", "legendFormat": "venue-vendor CPU", "refId": "B" }
+      ],
+      "title": "Node.js - CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "gradientMode": "none", "showPoints": "never", "pointSize": 5, "spanNulls": false, "stacking": { "mode": "none", "group": "A" }, "axisPlacement": "auto", "axisColorMode": "text", "axisLabel": "", "scaleDistribution": { "type": "linear" }, "hideFrom": { "tooltip": false, "viz": false, "legend": false }, "thresholdsStyle": { "mode": "off" }, "barAlignment": 0, "insertNulls": false, "axisBorderShow": false, "axisCenteredZero": false },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 17,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_notification_nodejs_active_handles_total{job=\"notification-service\"}", "legendFormat": "notification active handles", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "eventzen-prometheus" }, "expr": "eventzen_venue_vendor_nodejs_active_handles_total{job=\"venue-vendor-service\"}", "legendFormat": "venue-vendor active handles", "refId": "B" }
+      ],
+      "title": "Node.js - Active Handles",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["eventzen", "nodejs", "dotnet"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "EventZen - Non-JVM Services (.NET & Node.js)",
+  "uid": "eventzen-nonjvm",
+  "version": 1,
+  "weekStart": ""
+}

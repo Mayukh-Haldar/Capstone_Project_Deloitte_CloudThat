@@ -1,0 +1,94 @@
+{
+  "title": "Public Sector Innovation Summit 2026",
+  "eventType": "Conference",
+  "category": "BUSINESS",
+  "startTime": "2026-08-21T09:00",
+  "endTime": "2026-08-21T18:00",
+  "expectedAttendees": 600,
+  "capacity": 720,
+  "estimatedBudget": 1250000,
+  "approvedBudget": 1250000,
+  "tags": [
+    "government",
+    "digital-transformation",
+    "policy",
+    "innovation"
+  ],
+  "description": "A full-day summit bringing together public sector leaders, civic-tech teams, and innovation officers to discuss digital service delivery, citizen experience, and scalable governance platforms.",
+  "bannerImageUrl": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80",
+  "venueName": "Skyline Convention Center",
+  "agendaItems": [
+    {
+      "agendaTitle": "Registration and Welcome Coffee",
+      "type": "Check-in",
+      "startTime": "2026-08-21T09:00",
+      "endTime": "2026-08-21T09:30",
+      "description": "Attendee registration, badge collection, and networking."
+    },
+    {
+      "agendaTitle": "Opening Keynote: Citizen-Centered Digital Platforms",
+      "type": "Keynote",
+      "startTime": "2026-08-21T09:30",
+      "endTime": "2026-08-21T10:15",
+      "description": "A keynote on building responsive and inclusive public digital services."
+    },
+    {
+      "agendaTitle": "Panel: Modern Governance and Service Delivery",
+      "type": "Panel",
+      "startTime": "2026-08-21T11:00",
+      "endTime": "2026-08-21T12:00",
+      "description": "Public leaders discuss interoperability, transparency, and modernization."
+    },
+    {
+      "agendaTitle": "Closing Remarks and Next Steps",
+      "type": "Closing",
+      "startTime": "2026-08-21T17:15",
+      "endTime": "2026-08-21T18:00",
+      "description": "A closing summary and action plan for follow-up collaboration."
+    }
+  ],
+  "sessions": [
+    {
+      "title": "Citizen-Centered Digital Platforms",
+      "speakerName": "Shreya Iyer",
+      "speakerRole": "Commissioner of Digital Services",
+      "speakerCompany": "Metro Civic Office",
+      "room": "Aurora Ballroom",
+      "type": "Keynote",
+      "startTime": "2026-08-21T09:30",
+      "endTime": "2026-08-21T10:15",
+      "capacity": 720,
+      "description": "Lessons from large-scale citizen service modernization programs."
+    },
+    {
+      "title": "Modern Governance and Service Delivery",
+      "speakerName": "Rohan Sethi",
+      "speakerRole": "Program Director",
+      "speakerCompany": "National Public Systems Lab",
+      "room": "Launchpad Hall",
+      "type": "Panel",
+      "startTime": "2026-08-21T11:00",
+      "endTime": "2026-08-21T12:00",
+      "capacity": 500,
+      "description": "A panel on operating models, procurement agility, and change management."
+    }
+  ],
+  "ticketTiers": [
+    {
+      "name": "Delegate Pass",
+      "tierCode": "GENERAL",
+      "price": 0,
+      "quantity": 600,
+      "maxPerOrder": 4,
+      "description": "Conference access for invited public sector delegates."
+    },
+    {
+      "name": "Partner Seat",
+      "tierCode": "VIP",
+      "price": 1500,
+      "quantity": 120,
+      "maxPerOrder": 2,
+      "description": "Priority access, reserved seating, and networking lounge entry."
+    }
+  ]
+}
