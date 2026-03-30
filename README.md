@@ -797,52 +797,52 @@ All diagram files are located in the `docs/` directory:
 
 ### EventZen UI Previews
 
-Below is a glimpse of the actual EventZen platform UI. To view the complete collection of all 50+ UI screenshots, please browse the [docs/eventzenUI](./docs/eventzenUI/) folder.
+Below is a glimpse of the actual EventZen platform UI. To view the complete collection of all 50+ UI screenshots, please browse the [docs/EventZenUI](./docs/EventZenUI/) folder.
 
 **UI Preview 1**
-![UI Preview 1](docs/eventzenUI/EventZenUI%20(1).png)
+![UI Preview 1](docs/EventZenUI/EventZenUI%20(1).png)
 
 **UI Preview 2**
-![UI Preview 2](docs/eventzenUI/EventZenUI%20(2).png)
+![UI Preview 2](docs/EventZenUI/EventZenUI%20(2).png)
 
 **UI Preview 3**
-![UI Preview 3](docs/eventzenUI/EventZenUI%20(3).png)
+![UI Preview 3](docs/EventZenUI/EventZenUI%20(3).png)
 
 **UI Preview 4**
-![UI Preview 4](docs/eventzenUI/EventZenUI%20(4).png)
+![UI Preview 4](docs/EventZenUI/EventZenUI%20(4).png)
 
 **UI Preview 5**
-![UI Preview 5](docs/eventzenUI/EventZenUI%20(5).png)
+![UI Preview 5](docs/EventZenUI/EventZenUI%20(5).png)
 
 **UI Preview 6**
-![UI Preview 6](docs/eventzenUI/EventZenUI%20(6).png)
+![UI Preview 6](docs/EventZenUI/EventZenUI%20(6).png)
 
 **UI Preview 7**
-![UI Preview 7](docs/eventzenUI/EventZenUI%20(7).png)
+![UI Preview 7](docs/EventZenUI/EventZenUI%20(7).png)
 
 **UI Preview 8**
-![UI Preview 8](docs/eventzenUI/EventZenUI%20(8).png)
+![UI Preview 8](docs/EventZenUI/EventZenUI%20(8).png)
 
 **UI Preview 9**
-![UI Preview 9](docs/eventzenUI/EventZenUI%20(9).png)
+![UI Preview 9](docs/EventZenUI/EventZenUI%20(9).png)
 
 **UI Preview 10**
-![UI Preview 10](docs/eventzenUI/EventZenUI%20(10).png)
+![UI Preview 10](docs/EventZenUI/EventZenUI%20(10).png)
 
 **UI Preview 11**
-![UI Preview 11](docs/eventzenUI/EventZenUI%20(11).png)
+![UI Preview 11](docs/EventZenUI/EventZenUI%20(11).png)
 
 **UI Preview 12**
-![UI Preview 12](docs/eventzenUI/EventZenUI%20(12).png)
+![UI Preview 12](docs/EventZenUI/EventZenUI%20(12).png)
 
 **UI Preview 13**
-![UI Preview 13](docs/eventzenUI/EventZenUI%20(13).png)
+![UI Preview 13](docs/EventZenUI/EventZenUI%20(13).png)
 
 **UI Preview 14**
-![UI Preview 14](docs/eventzenUI/EventZenUI%20(14).png)
+![UI Preview 14](docs/EventZenUI/EventZenUI%20(14).png)
 
 **UI Preview 15**
-![UI Preview 15](docs/eventzenUI/EventZenUI%20(15).png)
+![UI Preview 15](docs/EventZenUI/EventZenUI%20(15).png)
 
 ---
 
