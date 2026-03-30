@@ -159,7 +159,8 @@ services:
     image: confluentinc/cp-kafka:7.5.0
     container_name: eventzen-kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -175,9 +176,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "cub kafka-ready -b kafka:29092 1 20"]
       interval: 20s
-      timeout: 10s
+      timeout: 30s
       retries: 10
-      start_period: 40s
+      start_period: 60s
     restart: unless-stopped
 
   kafka-ui:

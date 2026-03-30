@@ -4,7 +4,7 @@ import { PageNavigation } from "../components/PageNavigation";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { ApiClientError } from "../lib/http-client";
 import { notificationApi } from "../lib/notification-api";
-import { emitNotificationStateChanged } from "../lib/notification-events";
+import { emitNotificationStateChanged, NOTIFICATION_RECEIVED_EVENT } from "../lib/notification-events";
 
 const channelMeta = {
     EMAIL: { label: "Email", icon: Mail },
@@ -228,6 +228,33 @@ export function Notifications() {
             totalPages: nextTotalPages
         });
     }, [allItems, currentPage, showUnreadOnly]);
+
+    useEffect(() => {
+        const handleNotificationReceived = (event) => {
+            const notification = event.detail;
+            if (!notification?.id) {
+                return;
+            }
+
+            const normalizedNotification = {
+                ...notification,
+                _id: notification.id,
+                channel: notification.channel || "IN_APP",
+                status: notification.status || "SENT",
+                readAt: notification.readAt || null
+            };
+
+            setAllItems((current) => {
+                const withoutExisting = current.filter((item) => item._id !== normalizedNotification._id);
+                return [normalizedNotification, ...withoutExisting];
+            });
+        };
+
+        window.addEventListener(NOTIFICATION_RECEIVED_EVENT, handleNotificationReceived);
+        return () => {
+            window.removeEventListener(NOTIFICATION_RECEIVED_EVENT, handleNotificationReceived);
+        };
+    }, []);
 
     const handleMarkRead = async (id, read) => {
         try {
