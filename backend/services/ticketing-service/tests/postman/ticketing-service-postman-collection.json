@@ -1,0 +1,705 @@
+{
+  "info": {
+    "_postman_id": "eventzen-ticketing-collection",
+    "name": "EventZen – Ticketing Service",
+    "description": "System-level tests for the EventZen Ticketing Service (port 8084).\n\nPre-requisites\n──────────────\n1. event-service is running on {{eventBaseUrl}}.\n2. ticketing-service is running on {{baseUrl}}.\n3. The services are reachable on localhost so the local x-user-* development fallback can be used.\n\nHow to run\n──────────\nPostman: Collection Runner → select environment 'EventZen Ticketing Service – Local'\nNewman: newman run ticketing-service-postman-collection.json -e ticketing-service-postman-environment.json\n\nThis collection bootstraps its own category lookup and event lifecycle setup before exercising ticketing APIs.\n\nTest IDs: TKT-ST-001 … TKT-ST-020",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "TKT-ST-000A – List categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const categories = pm.response.json();",
+                  "pm.test('Categories available', () => pm.expect(categories).to.be.an('array').and.not.empty);",
+                  "pm.environment.set('categoryId', categories[0].id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{eventBaseUrl}}/api/v1/categories"
+          }
+        },
+        {
+          "name": "TKT-ST-000B – Create event (ORGANIZER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Event starts pending approval', () => pm.expect(body.event.status).to.eql('PENDING_APPROVAL'));",
+                  "pm.environment.set('eventId', body.event.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer local-dev-organizer" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "url": "{{eventBaseUrl}}/api/v1/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Ticketing Postman Event {{$timestamp}}\",\n  \"eventType\": \"CONFERENCE\",\n  \"description\": \"Ticketing system test event created automatically.\",\n  \"startTime\": \"2030-11-15T09:00:00Z\",\n  \"endTime\": \"2030-11-15T18:00:00Z\",\n  \"expectedAttendees\": 120,\n  \"capacity\": 250,\n  \"estimatedBudget\": 60000,\n  \"recurrenceRule\": \"NONE\",\n  \"tags\": [\"ticketing\", \"postman\"],\n  \"agendaItems\": [\n    {\n      \"agendaTitle\": \"Opening Session\",\n      \"type\": \"KEYNOTE\",\n      \"startTime\": \"2030-11-15T09:00:00Z\",\n      \"endTime\": \"2030-11-15T10:00:00Z\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "TKT-ST-000C – Approve event (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Event moves to DRAFT', () => pm.expect(pm.response.json().event.status).to.eql('DRAFT'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer local-dev-admin" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{adminUserId}}" },
+              { "key": "x-user-email", "value": "{{adminEmail}}" },
+              { "key": "x-user-roles", "value": "ADMIN" }
+            ],
+            "url": "{{eventBaseUrl}}/api/v1/events/{{eventId}}/approval/approve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approvedBudget\": 60000,\n  \"note\": \"Approved for ticketing system tests.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "TKT-ST-000D – Open registration (ORGANIZER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Event opens registration', () => pm.expect(pm.response.json().event.status).to.eql('REGISTRATION_OPEN'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer local-dev-organizer" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "url": "{{eventBaseUrl}}/api/v1/events/{{eventId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REGISTRATION_OPEN\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "TKT-ST-001 – Health check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Body contains status UP', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ticket Types",
+      "item": [
+        {
+          "name": "TKT-ST-002 – List ticket types (public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is an array', () => {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types?eventId={{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types"],
+              "query": [{ "key": "eventId", "value": "{{eventId}}" }]
+            }
+          }
+        },
+        {
+          "name": "TKT-ST-003 – Create ticket type (ORGANIZER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Has ticketTypeId', () => pm.expect(body.ticketTypeId).to.be.a('string'));",
+                  "pm.test('Correct name', () => pm.expect(body.ticketName).to.eql('VIP Pass'));",
+                  "pm.environment.set('ticketTypeId', body.ticketTypeId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketName\": \"VIP Pass\",\n  \"tierCode\": \"VIP\",\n  \"price\": 299.00,\n  \"totalQuantity\": 100,\n  \"maxPerOrder\": 2,\n  \"description\": \"Front-row access with complimentary refreshments\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/ticket-types"
+          }
+        },
+        {
+          "name": "TKT-ST-004 – Create ticket type – no auth (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketName\": \"General\",\n  \"tierCode\": \"GEN\",\n  \"price\": 50,\n  \"totalQuantity\": 200,\n  \"maxPerOrder\": 4\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/ticket-types"
+          }
+        },
+        {
+          "name": "TKT-ST-005 – Create ticket type – ATTENDEE forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketName\": \"General\",\n  \"tierCode\": \"GEN\",\n  \"price\": 50,\n  \"totalQuantity\": 200,\n  \"maxPerOrder\": 4\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/ticket-types"
+          }
+        },
+        {
+          "name": "TKT-ST-006 – Update ticket type (ORGANIZER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Name updated', () => {",
+                  "  pm.expect(pm.response.json().ticketName).to.eql('VIP Premium');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketName\": \"VIP Premium\",\n  \"tierCode\": \"VIP\",\n  \"price\": 349.00,\n  \"totalQuantity\": 100,\n  \"maxPerOrder\": 2,\n  \"description\": \"Premium front-row access with lounge entry\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/ticket-types/{{ticketTypeId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "TKT-ST-007 – Register attendee (200, PENDING)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Status is PENDING', () => pm.expect(body.status).to.eql('PENDING'));",
+                  "pm.test('Has registrationId', () => pm.expect(body.registrationId).to.be.a('string'));",
+                  "pm.test('Has ticket with QR payload', () => {",
+                  "  pm.expect(body.ticket).to.not.be.undefined;",
+                  "  pm.expect(body.ticket.qrPayload).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.environment.set('registrationId', body.registrationId);",
+                  "pm.environment.set('ticketId', body.ticket.ticketId);",
+                  "pm.environment.set('qrPayload', body.ticket.qrPayload);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" },
+              { "key": "Idempotency-Key", "value": "st007-idem-{{$timestamp}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Postman\",\n  \"email\": \"jane.postman@eventzen.local\",\n  \"phone\": \"+1-555-0100\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/registrations"
+          }
+        },
+        {
+          "name": "TKT-ST-008 – Register – no auth (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"firstName\": \"No\",\n  \"lastName\": \"Auth\",\n  \"email\": \"noauth@test.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/registrations"
+          }
+        },
+        {
+          "name": "TKT-ST-009 – Duplicate registration (409, TKT-3002)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code TKT-3002', () => {",
+                  "  pm.expect(pm.response.json().code).to.eql('TKT-3002');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" },
+              { "key": "Idempotency-Key", "value": "st009-idem-dup" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Postman\",\n  \"email\": \"jane.postman@eventzen.local\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/registrations"
+          }
+        },
+        {
+          "name": "TKT-ST-010 – List my registrations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is array with at least 1 item', () => {",
+                  "  const arr = pm.response.json();",
+                  "  pm.expect(arr).to.be.an('array').with.lengthOf.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/registrations/me"
+          }
+        },
+        {
+          "name": "TKT-ST-011 – Confirm payment (internal key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is CONFIRMED', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('CONFIRMED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-internal-service-key", "value": "{{internalServiceKey}}" }],
+            "url": "{{baseUrl}}/api/v1/internal/registrations/{{registrationId}}/confirm-payment"
+          }
+        },
+        {
+          "name": "TKT-ST-012 – Confirm payment – wrong key (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "x-internal-service-key", "value": "absolutely-wrong-key" }],
+            "url": "{{baseUrl}}/api/v1/internal/registrations/{{registrationId}}/confirm-payment"
+          }
+        },
+        {
+          "name": "TKT-ST-013 – List event registrations (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Contains at least 1 registration', () => {",
+                  "  pm.expect(pm.response.json()).to.be.an('array').with.lengthOf.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{adminUserId}}" },
+              { "key": "x-user-email", "value": "{{adminEmail}}" },
+              { "key": "x-user-roles", "value": "ADMIN" }
+            ],
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/registrations"
+          }
+        },
+        {
+          "name": "TKT-ST-014 – Cancel registration (owner)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/registrations/{{registrationId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "TKT-ST-015 – List my tickets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Array response', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/tickets/me"
+          }
+        },
+        {
+          "name": "TKT-ST-016 – Get ticket by ID (owner)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ticket matches stored id', () => {",
+                  "  pm.expect(pm.response.json().ticketId).to.eql(pm.environment.get('ticketId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/tickets/{{ticketId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "item": [
+        {
+          "name": "TKT-ST-017 – Join waitlist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Status is ACTIVE', () => pm.expect(body.status).to.eql('ACTIVE'));",
+                  "pm.test('Has waitlistEntryId', () => pm.expect(body.waitlistEntryId).to.be.a('string'));",
+                  "pm.environment.set('waitlistEntryId', body.waitlistEntryId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"firstName\": \"Waitlist\",\n  \"lastName\": \"Postman\",\n  \"email\": \"waitlist.postman@eventzen.local\",\n  \"phone\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/waitlist"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check-In",
+      "item": [
+        {
+          "name": "TKT-ST-018 – Scan QR (STAFF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is CHECKED_IN', () => {",
+                  "  pm.expect(pm.response.json().status).to.eql('CHECKED_IN');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{staffUserId}}" },
+              { "key": "x-user-email", "value": "{{staffEmail}}" },
+              { "key": "x-user-roles", "value": "STAFF" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qrPayload\": \"{{qrPayload}}\",\n  \"gate\": \"MAIN\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/checkin/scan"
+          }
+        },
+        {
+          "name": "TKT-ST-019 – Check-in stats (ORGANIZER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Has totalRegistrations', () => pm.expect(body.totalRegistrations).to.be.a('number'));",
+                  "pm.test('Has checkedInCount', () => pm.expect(body.checkedInCount).to.be.a('number'));",
+                  "pm.test('checkedInCount >= 1', () => pm.expect(body.checkedInCount).to.be.above(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "url": "{{baseUrl}}/api/v1/events/{{eventId}}/checkin/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seat Map",
+      "item": [
+        {
+          "name": "TKT-ST-020 – Get seat map (public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Has capacity field', () => pm.expect(body.capacity).to.be.a('number'));",
+                  "pm.test('Has rows field', () => pm.expect(body.rows).to.be.an('array'));",
+                  "pm.test('Matches eventId', () => pm.expect(body.eventId).to.eql(pm.environment.get('eventId')));",
+                  "pm.test('Matches ticketTypeId', () => pm.expect(body.ticketTypeId).to.eql(pm.environment.get('ticketTypeId')));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/{{ticketTypeId}}/seat-map?eventId={{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "{{ticketTypeId}}", "seat-map"],
+              "query": [{ "key": "eventId", "value": "{{eventId}}" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

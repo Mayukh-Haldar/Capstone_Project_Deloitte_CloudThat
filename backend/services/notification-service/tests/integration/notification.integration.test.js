@@ -1,26 +1,18 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const mongoose = require("mongoose");
 const request = require("supertest");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const { connectTestDatabase, disconnectTestDatabase } = require("./support/testDatabase");
 
-let mongoServer;
+let databaseState;
 
 test.before(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  process.env.MONGO_URI = mongoServer.getUri();
-  process.env.NODE_ENV = "test";
-  process.env.SEED_DEFAULT_TEMPLATES = "true";
+  databaseState = await connectTestDatabase("notification", { seedDefaultTemplates: true });
   const { seedDefaultTemplates } = require("../../src/seeds/seedDefaultTemplates");
-  await mongoose.connect(process.env.MONGO_URI);
   await seedDefaultTemplates();
 });
 
 test.after(async () => {
-  await mongoose.connection.close();
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  await disconnectTestDatabase(databaseState);
 });
 
 test("notification send creates records and user can mark one as read", async () => {

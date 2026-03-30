@@ -1,0 +1,165 @@
+{
+  "id": "eventzen-ticketing-env",
+  "name": "EventZen Ticketing Service – Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8084",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authBaseUrl",
+      "value": "http://localhost:8081",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true,
+      "description": "JWT bearer token for a user with ADMIN role. Obtain from POST /api/v1/auth/login on auth-service."
+    },
+    {
+      "key": "organizerToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true,
+      "description": "JWT bearer token for a user with ORGANIZER role."
+    },
+    {
+      "key": "attendeeToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true,
+      "description": "JWT bearer token for a user with ATTENDEE role."
+    },
+    {
+      "key": "staffToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true,
+      "description": "JWT bearer token for a user with STAFF role."
+    },
+    {
+      "key": "internalServiceKey",
+      "value": "eventzen-internal-key",
+      "type": "default",
+      "enabled": true,
+      "description": "Legacy dev key accepted locally without .env. If the service is configured with a custom key via NotificationService__InternalServiceKey, use that value instead."
+    },
+    {
+      "key": "eventBaseUrl",
+      "value": "http://localhost:8082",
+      "type": "default",
+      "enabled": true,
+      "description": "Event service base URL used to bootstrap a test event."
+    },
+    {
+      "key": "organizerUserId",
+      "value": "92000000-0000-0000-0000-000000000001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "organizerEmail",
+      "value": "bookings@pulsecraftav.example",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminUserId",
+      "value": "91000000-0000-0000-0000-000000000001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@eventzen.local",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "attendeeUserId",
+      "value": "93000000-0000-0000-0000-000000000001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "attendeeEmail",
+      "value": "attendee.ticketing.postman@eventzen.local",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "staffUserId",
+      "value": "94000000-0000-0000-0000-000000000001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "staffEmail",
+      "value": "staff.ticketing.postman@eventzen.local",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated automatically from event-service categories."
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated automatically after creating an event, or set manually."
+    },
+    {
+      "key": "ticketTypeId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated after creating a ticket type."
+    },
+    {
+      "key": "registrationId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated after registering an attendee."
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated after registration."
+    },
+    {
+      "key": "qrPayload",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "QR payload extracted from a registration response for check-in scanning."
+    },
+    {
+      "key": "seatReservationId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated after reserving a seat."
+    },
+    {
+      "key": "waitlistEntryId",
+      "value": "",
+      "type": "default",
+      "enabled": true,
+      "description": "Populated after joining the waitlist."
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

@@ -1,0 +1,588 @@
+{
+  "info": {
+    "name": "EventZen – Finance Service",
+    "_postman_id": "eventzen-finance-collection-v1",
+    "description": "System tests (FIN-ST-001 – FIN-ST-020) covering Budget, Expense, Payment and Report endpoints.\n\nAuth: Set adminToken / organizerToken / attendeeToken in the environment, or run with the dev-header fallback variables (adminUserId, organizerUserId, attendeeUserId).\n\nRun order: execute folder-by-folder in sequence; each folder relies on env vars populated by previous steps.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "FIN-ST-001 – Health check",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('organizerEventId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.environment.unset('budgetId');",
+                  "pm.environment.unset('expenseId');",
+                  "pm.environment.unset('paymentId');",
+                  "pm.environment.unset('gatewayReference');",
+                  "pm.environment.unset('pendingPaymentRef');",
+                  "pm.environment.unset('testEventId');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Budget",
+      "item": [
+        {
+          "name": "FIN-ST-002 – Create budget (ORGANIZER) → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Status is DRAFT', () => pm.expect(pm.response.json().status).to.eql('DRAFT'));",
+                  "pm.test('Contains items', () => pm.expect(pm.response.json().items).to.be.an('array').with.lengthOf.above(0));",
+                  "const b = pm.response.json();",
+                  "pm.environment.set('budgetId', b.id);",
+                  "pm.environment.set('testEventId', b.eventId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"EventZen System Test Summit\",\n  \"currency\": \"INR\",\n  \"items\": [\n    { \"title\": \"Venue Rental\", \"category\": \"VENUE\", \"estimatedAmount\": 50000, \"notes\": \"Grand Hall\" },\n    { \"title\": \"Marketing\", \"category\": \"MARKETING\", \"estimatedAmount\": 20000, \"notes\": null },\n    { \"title\": \"AV & Tech\", \"category\": \"AV\", \"estimatedAmount\": 15000, \"notes\": null }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/budget"
+          }
+        },
+        {
+          "name": "FIN-ST-003 – Create budget – no auth → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventName\":\"NoAuth\",\"currency\":\"INR\",\"items\":[{\"title\":\"X\",\"category\":\"OTHER\",\"estimatedAmount\":100}]}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/budget"
+          }
+        },
+        {
+          "name": "FIN-ST-004 – Create budget – ATTENDEE role → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventName\":\"Forbidden\",\"currency\":\"INR\",\"items\":[{\"title\":\"X\",\"category\":\"OTHER\",\"estimatedAmount\":100}]}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/budget"
+          }
+        },
+        {
+          "name": "FIN-ST-005 – Duplicate budget → 409 FIN-4003",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Code FIN-4003', () => pm.expect(pm.response.json().code).to.eql('FIN-4003'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventName\":\"Dup\",\"currency\":\"INR\",\"items\":[{\"title\":\"X\",\"category\":\"OTHER\",\"estimatedAmount\":100}]}"
+            },
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/budget"
+          }
+        },
+        {
+          "name": "FIN-ST-006 – Get budget → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Budget has items', () => pm.expect(pm.response.json().items.length).to.be.above(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/budget"
+          }
+        },
+        {
+          "name": "FIN-ST-007 – Approve budget as ADMIN → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is APPROVED', () => pm.expect(pm.response.json().status).to.eql('APPROVED'));",
+                  "pm.test('approvedTotal set', () => pm.expect(pm.response.json().approvedTotal).to.eql(85000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{adminUserId}}" },
+              { "key": "x-user-email", "value": "{{adminEmail}}" },
+              { "key": "x-user-roles", "value": "ADMIN" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"approvedTotal\": 85000 }"
+            },
+            "url": "{{baseUrl}}/api/v1/budgets/{{budgetId}}/approve"
+          }
+        },
+        {
+          "name": "FIN-ST-008 – Approve budget as ORGANIZER → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"approvedTotal\": 85000 }"
+            },
+            "url": "{{baseUrl}}/api/v1/budgets/{{budgetId}}/approve"
+          }
+        },
+        {
+          "name": "FIN-ST-009 – Add budget item → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Item count increased', () => pm.expect(pm.response.json().items.length).to.be.above(3));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Security\", \"category\": \"SECURITY\", \"estimatedAmount\": 8000, \"notes\": null }"
+            },
+            "url": "{{baseUrl}}/api/v1/budgets/{{budgetId}}/items"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "FIN-ST-010 – Log expense → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Amount matches', () => pm.expect(pm.response.json().amount).to.eql(12000));",
+                  "pm.environment.set('expenseId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{organizerEventId}}\",\n  \"eventName\": \"EventZen System Test Summit\",\n  \"category\": \"VENUE\",\n  \"amount\": 12000,\n  \"currency\": \"INR\",\n  \"vendorName\": \"Grand Halls Ltd\",\n  \"description\": \"Down payment for venue\",\n  \"receiptUrl\": null,\n  \"expenseDate\": \"2026-03-30\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expenses"
+          }
+        },
+        {
+          "name": "FIN-ST-011 – Log expense exceeding budget → 422 FIN-4001",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Code FIN-4001', () => pm.expect(pm.response.json().code).to.eql('FIN-4001'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{organizerEventId}}\",\n  \"eventName\": \"EventZen System Test Summit\",\n  \"category\": \"MARKETING\",\n  \"amount\": 999999,\n  \"currency\": \"INR\",\n  \"vendorName\": \"MegaBudget Co\",\n  \"description\": \"Over budget marketing spend\",\n  \"receiptUrl\": null,\n  \"expenseDate\": \"2026-03-30\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expenses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "FIN-ST-012 – Initiate CARD payment → 201 SUCCEEDED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Payment SUCCEEDED', () => pm.expect(pm.response.json().status).to.eql('SUCCEEDED'));",
+                  "pm.test('gatewayReference present', () => pm.expect(pm.response.json().gatewayReference).to.match(/^PAY-/));",
+                  "const p = pm.response.json();",
+                  "pm.environment.set('paymentId', p.id);",
+                  "pm.environment.set('gatewayReference', p.gatewayReference);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{organizerEventId}}\",\n  \"eventName\": \"EventZen System Test Summit\",\n  \"registrationId\": null,\n  \"venueBookingId\": null,\n  \"amount\": 1499,\n  \"currency\": \"INR\",\n  \"paymentMethod\": \"CARD\",\n  \"customerEmail\": \"{{attendeeEmail}}\",\n  \"description\": \"Local card payment\",\n  \"simulateFailure\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        },
+        {
+          "name": "FIN-ST-013 – Simulate payment failure → 402 FIN-4002",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 402', () => pm.response.to.have.status(402));",
+                  "pm.test('Code FIN-4002', () => pm.expect(pm.response.json().code).to.eql('FIN-4002'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{organizerEventId}}\",\n  \"eventName\": \"Failure Test Event\",\n  \"registrationId\": null,\n  \"venueBookingId\": null,\n  \"amount\": 999,\n  \"currency\": \"INR\",\n  \"paymentMethod\": \"CARD\",\n  \"customerEmail\": \"{{attendeeEmail}}\",\n  \"description\": \"Should fail\",\n  \"simulateFailure\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        },
+        {
+          "name": "FIN-ST-014 – Initiate BANK_TRANSFER → 201 PENDING",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Payment PENDING', () => pm.expect(pm.response.json().status).to.eql('PENDING'));",
+                  "pm.environment.set('pendingPaymentRef', pm.response.json().gatewayReference);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-user-id", "value": "{{organizerUserId}}" },
+              { "key": "x-user-email", "value": "{{organizerEmail}}" },
+              { "key": "x-user-roles", "value": "ORGANIZER" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{organizerEventId}}\",\n  \"eventName\": \"EventZen System Test Summit\",\n  \"registrationId\": null,\n  \"venueBookingId\": null,\n  \"amount\": 50000,\n  \"currency\": \"INR\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"customerEmail\": \"{{organizerEmail}}\",\n  \"description\": \"Bank transfer payment\",\n  \"simulateFailure\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        },
+        {
+          "name": "FIN-ST-015 – List my payments → 200 array",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is array with at least 1 item', () => pm.expect(pm.response.json()).to.be.an('array').with.lengthOf.above(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/payments/me"
+          }
+        },
+        {
+          "name": "FIN-ST-016 – Webhook confirms BANK_TRANSFER payment → 200 SUCCEEDED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is SUCCEEDED', () => pm.expect(pm.response.json().status).to.eql('SUCCEEDED'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gatewayReference\": \"{{pendingPaymentRef}}\",\n  \"status\": \"SUCCEEDED\",\n  \"gatewayPayload\": \"{\\\"bank\\\":\\\"HDFC\\\",\\\"utr\\\":\\\"UTR123456\\\"}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments/webhook"
+          }
+        },
+        {
+          "name": "FIN-ST-017 – Webhook unknown gatewayReference → 404 FIN-4042",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Code FIN-4042', () => pm.expect(pm.response.json().code).to.eql('FIN-4042'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"gatewayReference\": \"PAY-DOESNOTEXIST\", \"status\": \"SUCCEEDED\" }"
+            },
+            "url": "{{baseUrl}}/api/v1/payments/webhook"
+          }
+        },
+        {
+          "name": "FIN-ST-018 – Payment no auth → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eventId\":\"00000000-0000-0000-0000-000000000001\",\"eventName\":\"X\",\"amount\":1,\"currency\":\"INR\",\"paymentMethod\":\"CARD\",\"description\":\"x\"}"
+            },
+            "url": "{{baseUrl}}/api/v1/payments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financial Report",
+      "item": [
+        {
+          "name": "FIN-ST-019 – Get financial report (ADMIN) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Contains budget', () => pm.expect(pm.response.json().budget).to.not.be.null);",
+                  "pm.test('Revenue present', () => pm.expect(pm.response.json().totalRevenue).to.be.a('number'));",
+                  "pm.test('Expenses present', () => pm.expect(pm.response.json().totalExpenses).to.be.a('number'));",
+                  "pm.test('Transactions list', () => pm.expect(pm.response.json().recentTransactions).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{adminUserId}}" },
+              { "key": "x-user-email", "value": "{{adminEmail}}" },
+              { "key": "x-user-roles", "value": "ADMIN" }
+            ],
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/reports/financial"
+          }
+        },
+        {
+          "name": "FIN-ST-020 – Get financial report (ATTENDEE) → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-user-id", "value": "{{attendeeUserId}}" },
+              { "key": "x-user-email", "value": "{{attendeeEmail}}" },
+              { "key": "x-user-roles", "value": "ATTENDEE" }
+            ],
+            "url": "{{baseUrl}}/api/v1/events/{{organizerEventId}}/reports/financial"
+          }
+        }
+      ]
+    }
+  ]
+}

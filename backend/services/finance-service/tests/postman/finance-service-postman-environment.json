@@ -1,0 +1,122 @@
+{
+  "id": "eventzen-finance-env-v1",
+  "name": "EventZen – Finance Service (Local)",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8085",
+      "enabled": true,
+      "description": "Finance service base URL"
+    },
+    {
+      "key": "adminUserId",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "enabled": true,
+      "description": "UUID of the test admin user"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@eventzen.local",
+      "enabled": true,
+      "description": "Email for dev-header auth"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "enabled": false,
+      "description": "JWT Bearer token for admin (optional — dev headers used by default)"
+    },
+    {
+      "key": "organizerUserId",
+      "value": "00000000-0000-0000-0000-000000000002",
+      "enabled": true,
+      "description": "UUID of the test organizer user"
+    },
+    {
+      "key": "organizerEmail",
+      "value": "organizer@eventzen.local",
+      "enabled": true
+    },
+    {
+      "key": "organizerToken",
+      "value": "",
+      "enabled": false,
+      "description": "JWT Bearer token for organizer (optional)"
+    },
+    {
+      "key": "organizerEventId",
+      "value": "00000000-0000-0000-0000-000000000010",
+      "enabled": true,
+      "description": "A fixed event UUID owned by the organizer. Pre-create this event in the event-service before running these tests."
+    },
+    {
+      "key": "attendeeUserId",
+      "value": "00000000-0000-0000-0000-000000000003",
+      "enabled": true,
+      "description": "UUID of the test attendee user"
+    },
+    {
+      "key": "attendeeEmail",
+      "value": "attendee@eventzen.local",
+      "enabled": true
+    },
+    {
+      "key": "attendeeToken",
+      "value": "",
+      "enabled": false,
+      "description": "JWT Bearer token for attendee (optional)"
+    },
+    {
+      "key": "registrationId",
+      "value": "00000000-0000-0000-0000-000000000020",
+      "enabled": true,
+      "description": "Registration ID linked to a ticket in ticketing-service (used for payment)"
+    },
+    {
+      "key": "venueBookingId",
+      "value": "00000000-0000-0000-0000-000000000030",
+      "enabled": true,
+      "description": "Venue booking ID used for BANK_TRANSFER payment"
+    },
+    {
+      "key": "budgetId",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-002 (Create budget)"
+    },
+    {
+      "key": "expenseId",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-010 (Log expense)"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-012 (CARD payment)"
+    },
+    {
+      "key": "gatewayReference",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-012 (CARD payment gatewayReference)"
+    },
+    {
+      "key": "pendingPaymentRef",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-014 (BANK_TRANSFER pending payment)"
+    },
+    {
+      "key": "testEventId",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated by FIN-ST-002 from budget response eventId"
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "info": {
+    "description": "Local development environment for EventZen Finance Service system tests.\n\nPre-requisites:\n1. Finance service running on localhost:8085 with test/local profile.\n2. For dev-header auth to work the service must be listening on localhost (canUseLocalDevFallback() check).\n3. The organizerEventId must exist as a valid event in the environment (or finance-service must not validate event existence).\n4. Run the Postman collection folders in order: Setup → Budget → Expenses → Payments → Financial Report."
+  }
+}

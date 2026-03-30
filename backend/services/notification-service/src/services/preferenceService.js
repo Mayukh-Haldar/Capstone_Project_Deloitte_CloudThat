@@ -20,9 +20,15 @@ const getPreferences = async (userId) => {
 };
 
 const updatePreferences = async (userId, payload) => {
+  // Exclude from $setOnInsert any keys already present in $set payload to avoid
+  // MongoDB "Updating the path would create a conflict" error.
+  const insertOnlyDefaults = Object.fromEntries(
+    Object.entries(defaultPreference()).filter(([key]) => !(key in payload))
+  );
+
   await NotificationPreference.updateOne(
     { userId },
-    { $set: payload, $setOnInsert: { userId, ...defaultPreference() } },
+    { $set: payload, $setOnInsert: { userId, ...insertOnlyDefaults } },
     { upsert: true }
   );
 

@@ -169,7 +169,7 @@ static IReadOnlyDictionary<string, string?> ReadDotEnv(string filePath)
             continue;
         }
 
-        var key = line[..separatorIndex].Trim();
+        var key = line[..separatorIndex].Trim().Replace("__", ":");
         var value = line[(separatorIndex + 1)..].Trim();
         values[key] = value;
     }

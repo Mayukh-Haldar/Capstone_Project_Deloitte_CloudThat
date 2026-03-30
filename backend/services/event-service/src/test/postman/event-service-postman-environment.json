@@ -1,0 +1,22 @@
+{
+  "id": "event-service-env-local",
+  "name": "EventZen — Event Service (Local)",
+  "values": [
+    { "key": "baseUrl",           "value": "http://localhost:8082", "enabled": true },
+    { "key": "authBaseUrl",       "value": "http://localhost:8081", "enabled": true },
+    { "key": "organizerEmail",    "value": "bookings@pulsecraftav.example", "enabled": true },
+    { "key": "organizerPassword", "value": "Vendor#PulseCraftAV2026", "enabled": true },
+    { "key": "adminEmail",        "value": "admin@eventzen.local", "enabled": true },
+    { "key": "adminPassword",     "value": "Admin@12345", "enabled": true },
+    { "key": "organizerToken",    "value": "", "enabled": true },
+    { "key": "adminToken",        "value": "", "enabled": true },
+    { "key": "categoryId",        "value": "", "enabled": true },
+    { "key": "eventId",           "value": "", "enabled": true },
+    { "key": "sessionId",         "value": "", "enabled": true },
+    { "key": "agendaItemId1",     "value": "", "enabled": true },
+    { "key": "agendaItemId2",     "value": "", "enabled": true },
+    { "key": "enableRequestId",   "value": "", "enabled": true },
+    { "key": "internalServiceKey","value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}

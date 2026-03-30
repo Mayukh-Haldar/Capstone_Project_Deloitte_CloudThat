@@ -22,6 +22,15 @@ const templates = [
     variables: ["metadata.eventName", "metadata.ticketCode"]
   },
   {
+    templateKey: "registration.confirmed.IN_APP",
+    eventType: "registration.confirmed",
+    channel: CHANNEL.IN_APP,
+    locale: "en",
+    subject: "Registration confirmed: {{metadata.eventName}}",
+    body: "You're registered! Ticket code: {{metadata.ticketCode}}",
+    variables: ["metadata.eventName", "metadata.ticketCode"]
+  },
+  {
     templateKey: "payment.received.EMAIL",
     eventType: "payment.received",
     channel: CHANNEL.EMAIL,

@@ -39,6 +39,7 @@ logs/
 
 # Local archives and staging
 _zip_staging_source/
+# Shareable repo archives
 *.zip
 *.7z
 *.tar

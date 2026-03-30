@@ -803,6 +803,92 @@ class EventServiceTest {
                         && saved.getVenueCity() == null));
     }
 
+    @Test
+    void getEvent_notFound_throwsEventServiceException() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.getEvent(id))
+                .isInstanceOf(EventServiceException.class);
+    }
+
+    @Test
+    void transitionStatus_blockedWhenEventIsPendingApproval() {
+        UUID id = UUID.randomUUID();
+        Event event = new Event();
+        event.setId(id);
+        event.setOrganizerId(organizer.id());
+        event.setStatus(EventStatus.PENDING_APPROVAL);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.transitionStatus(
+                id, new TransitionEventStatusRequest(EventStatus.PUBLISHED), organizer))
+                .isInstanceOf(EventServiceException.class);
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void resubmitEventRequest_failsWhenApprovalStatusIsNotChangesRequested() {
+        UUID id = UUID.randomUUID();
+        Event event = buildEvent(id, EventStatus.PENDING_APPROVAL);
+        event.setApprovalStatus(EventApprovalStatus.PENDING);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.resubmitEventRequest(id, organizer))
+                .isInstanceOf(EventServiceException.class);
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void resubmitEventRequest_changesApprovalStatusBackToPending() {
+        UUID id = UUID.randomUUID();
+        Event event = buildEvent(id, EventStatus.PENDING_APPROVAL);
+        event.setApprovalStatus(EventApprovalStatus.CHANGES_REQUESTED);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toDetail(any(Event.class))).thenReturn(null);
+
+        eventService.resubmitEventRequest(id, organizer);
+
+        verify(eventRepository).save(argThat(saved ->
+                saved.getApprovalStatus() == EventApprovalStatus.PENDING));
+    }
+
+    @Test
+    void requestEnableEvent_failsIfEventIsNotDisabledByAdmin() {
+        UUID id = UUID.randomUUID();
+        Event event = buildEvent(id, EventStatus.DISABLED_BY_VENDOR);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.requestEnableEvent(id, organizer, null))
+                .isInstanceOf(EventServiceException.class);
+
+        verify(enableRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void requestEnableEvent_createsEnableRequestWithStatusPending() {
+        UUID id = UUID.randomUUID();
+        Event event = buildEvent(id, EventStatus.DISABLED_BY_ADMIN);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(event));
+        when(enableRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        eventService.requestEnableEvent(id, organizer, "Please re-enable");
+
+        verify(enableRequestRepository).save(argThat(req ->
+                req.getStatus() == com.eventzen.event.model.EventEnableRequestStatus.PENDING
+                        && id.equals(req.getEventId())
+                        && organizer.id().equals(req.getVendorId())
+                        && "Please re-enable".equals(req.getVendorNote())));
+    }
+
     private Event buildEvent(UUID eventId, EventStatus status) {
         Event event = new Event();
         event.setId(eventId);
