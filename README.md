@@ -89,7 +89,8 @@ On Windows checkouts, the rendered Vault env file can carry CRLF line endings. T
 Important:
 
 - rerunning `scripts/start-local-vault.ps1` while the Vault-backed stack is already running can cause the script to choose new host ports, because it probes for currently available ports before calling Docker Compose
-- if you want to rebuild containers without changing the existing published ports, use `scripts/rebuild-local-vault.ps1` instead of rerunning `scripts/start-local-vault.ps1`
+- `scripts/start-local-vault.ps1` writes the resolved Vault host port mappings to `.secrets/local-vault-ports.json` on each run
+- if you want to rebuild containers without changing the existing published ports, use `scripts/rebuild-local-vault.ps1` instead of rerunning `scripts/start-local-vault.ps1`; the rebuild script reuses the last saved port mappings and does not run safe-port resolution again
 
 Vault UI will be available at:
 
@@ -112,6 +113,8 @@ Rebuild the Vault-backed stack in place without reassigning ports:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\rebuild-local-vault.ps1
 ```
+
+This script expects a previously saved port snapshot from `scripts/start-local-vault.ps1`.
 
 Rebuild without forcing image rebuild:
 

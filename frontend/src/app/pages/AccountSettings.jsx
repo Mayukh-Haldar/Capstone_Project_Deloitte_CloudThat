@@ -450,12 +450,13 @@ export function AccountSettings() {
               <div className="mt-5 grid gap-4 xl:grid-cols-2">
                 {requestCards.map((card) => {
                 const pending = pendingRequestFor(card.type);
-                return (<div key={card.type} className={`rounded-2xl border p-5 ${card.tone}`}>
+                return (<div key={card.type} className={`rounded-2xl border p-5 flex flex-col ${card.tone}`}>
                       <h3 className="text-lg font-semibold">{card.title}</h3>
                       <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{card.description}</p>
                       {card.linkHref && card.linkLabel && (<a href={card.linkHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-semibold text-[#1132d4] underline-offset-4 hover:underline dark:text-[#7aa3ff]">
                           {card.linkLabel}
                         </a>)}
+                      <div className="mt-auto">
                       {pending ? (<div className="mt-4 space-y-3 rounded-xl border border-white/50 bg-white/70 p-4 dark:border-white/10 dark:bg-[#0d1429]/70">
                           <p className="text-sm">
                             Pending request submitted on <span className="font-semibold">{new Date(pending.createdAt).toLocaleString()}</span>
@@ -470,6 +471,7 @@ export function AccountSettings() {
                             {card.buttonLabel}
                           </button>
                         </div>)}
+                      </div>
                     </div>);
             })}
               </div>

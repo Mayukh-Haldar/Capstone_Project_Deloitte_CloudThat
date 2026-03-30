@@ -68,19 +68,19 @@ export function Footer() {
             <h3 className="font-semibold text-foreground mb-4">Resources</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                <Link to="/help" className="text-sm text-muted-foreground hover:text-foreground">
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+                <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">
@@ -124,15 +124,15 @@ export function Footer() {
               © {currentYear} EventZen. All rights reserved.
             </p>
             <div className="flex flex-wrap gap-6">
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
                 Privacy
-              </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
                 Terms
-              </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
+              </Link>
+              <Link to="/cookies" className="text-sm text-muted-foreground hover:text-foreground">
                 Cookies
-              </a>
+              </Link>
             </div>
           </div>
         </div>

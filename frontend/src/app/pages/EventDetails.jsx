@@ -253,7 +253,7 @@ export function EventDetails() {
             <div>
               <p className="font-semibold text-amber-800 dark:text-amber-200">This event has been disabled by the owner.</p>
               <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                Registration and ticketing are currently unavailable. If you have already purchased a ticket, please email the event organizer for refund or further information.
+                Registration and ticketing are currently unavailable. Please contact the event organizer for further information.
               </p>
             </div>
           </div>
@@ -484,9 +484,6 @@ export function EventDetails() {
                 <button onClick={openCheckout} disabled={!canRegister || currentSelection.qty === 0 || alreadyRegistered} className="w-full rounded-xl bg-blue-600 py-4 text-base font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 dark:bg-[#1132d4] dark:hover:bg-[#1132d4]/80 shadow-md shadow-blue-600/20">
                   {alreadyRegistered ? "Already Registered" : "Register Now"}
                 </button>
-                <p className="text-center text-xs text-slate-400 mt-4 uppercase tracking-wider font-semibold">
-                  No refunds after Oct 1, 2026
-                </p>
 
                 {actionMessage && alreadyRegistered && <p className="mt-4 text-center text-sm font-medium text-red-600 dark:text-red-400">{actionMessage}</p>}
               </div>

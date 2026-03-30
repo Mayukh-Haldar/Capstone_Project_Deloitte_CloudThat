@@ -106,7 +106,7 @@ export function TicketPass() {
 
         <div className="mx-auto max-w-[980px] overflow-hidden rounded-[36px] border border-black/10 bg-white/92 shadow-[0_24px_64px_rgba(15,23,42,0.16)] backdrop-blur dark:border-white/10 dark:bg-white/95 dark:shadow-[0_30px_80px_rgba(4,12,30,0.45)] print:max-w-none print:min-h-[250mm] print:break-inside-avoid print:rounded-[28px] print:border-[#cfdcff] print:bg-white print:shadow-[0_18px_48px_rgba(17,50,212,0.16)]" style={{ WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
           <div className="relative">
-            <img src={getEventPlaceholderImage(registration.registrationId)} alt={registration.eventTitle} className="h-44 w-full object-cover print:h-40"/>
+            <img src={getEventPlaceholderImage(registration.eventId)} alt={registration.eventTitle} className="h-44 w-full object-cover print:h-40"/>
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,14,36,0.08),rgba(6,14,36,0.65))]"/>
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 px-8 pb-6 print:px-6 print:pb-5">
               <div>

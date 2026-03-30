@@ -14,6 +14,10 @@ import { EventCheckout } from "./pages/EventCheckout";
 import { SeatSelection } from "./pages/SeatSelection";
 import { Auth } from "./pages/Auth";
 import { VenueBookingCheckout } from "./pages/VenueBookingCheckout";
+import { HelpCenter } from "./pages/HelpCenter";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { TermsOfService } from "./pages/TermsOfService";
+import { CookiesPolicy } from "./pages/CookiesPolicy";
 const CustomerPortal = lazy(() => import("./pages/CustomerPortal").then((module) => ({ default: module.CustomerPortal })));
 const VendorDashboard = lazy(() => import("./pages/VendorDashboard").then((module) => ({ default: module.VendorDashboard })));
 const Tickets = lazy(() => import("./pages/Tickets").then((module) => ({ default: module.Tickets })));
@@ -37,6 +41,10 @@ export const router = createBrowserRouter([
             { path: "auth", Component: Auth },
             { path: "events", Component: Events },
             { path: "events/:id", Component: EventDetails },
+            { path: "help", Component: HelpCenter },
+            { path: "privacy", Component: PrivacyPolicy },
+            { path: "terms", Component: TermsOfService },
+            { path: "cookies", Component: CookiesPolicy },
             {
                 Component: RequireAuth,
                 children: [

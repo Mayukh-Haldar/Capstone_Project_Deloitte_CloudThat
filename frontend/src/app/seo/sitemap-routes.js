@@ -1,4 +1,4 @@
-export const SITE_URL = process.env.SITE_URL || process.env.VITE_SITE_URL || "http://localhost:5173";
+export const SITE_URL = process.env.SITE_URL || process.env.VITE_SITE_URL || "http://localhost";
 
 // Only include canonical public routes here. Authenticated and parameterized pages
 // should be added only when you have stable, crawlable URLs to publish.

@@ -9,6 +9,7 @@ $composeFiles = @(
     (Join-Path $repoRoot "docker-compose.yml"),
     (Join-Path $repoRoot "docker-compose.vault.yml")
 )
+$localVaultPortsPath = Join-Path $repoRoot ".secrets/local-vault-ports.json"
 
 . (Join-Path $PSScriptRoot "vault/local-secret-store.ps1")
 
@@ -134,6 +135,26 @@ function Get-LocalhostUrl {
     return "http://localhost:$Port"
 }
 
+function Save-ResolvedPortState {
+    param(
+        [string]$Path,
+        [object[]]$Settings
+    )
+
+    $portState = [ordered]@{}
+
+    foreach ($setting in $Settings) {
+        $portState[$setting.Key] = Get-EnvIntValue -Name $setting.Key -DefaultValue $setting.Default
+    }
+
+    $directory = Split-Path -Parent $Path
+    if (-not [string]::IsNullOrWhiteSpace($directory)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
+    $portState | ConvertTo-Json | Set-Content -Path $Path -Encoding UTF8
+}
+
 if (-not (Test-EventZenLocalSecretStore)) {
     Write-Host "Encrypted local Vault secret store not found. Initializing it now..." -ForegroundColor Yellow
     & $setSecretsScript
@@ -228,6 +249,9 @@ if ($changes.Count -gt 0) {
 else {
     Write-Host "All configured host ports are available." -ForegroundColor Green
 }
+
+Save-ResolvedPortState -Path $localVaultPortsPath -Settings $portSettings
+Write-Host "Saved resolved Vault port mappings to $localVaultPortsPath" -ForegroundColor DarkGray
 
 $composeArgs = @(
     "compose"

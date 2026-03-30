@@ -179,14 +179,14 @@ export function Tickets() {
               const eventStatus = eventStatusMap[registration.eventId] || "";
               const eventDisabled = isDisabledEvent(eventStatus);
               return (<article key={registration.registrationId} className={`flex h-full flex-col overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm ${eventDisabled ? "border-amber-300 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-900/10" : "border-slate-200 bg-white/90 dark:border-white/10 dark:bg-[#0f1e3d]/80"}`}>
-                <img src={getEventPlaceholderImage(registration.registrationId)} alt={registration.eventTitle} loading="lazy" className={`h-40 w-full object-cover ${eventDisabled ? "opacity-60 grayscale" : ""}`}/>
+                <img src={getEventPlaceholderImage(registration.eventId)} alt={registration.eventTitle} loading="lazy" className={`h-40 w-full object-cover ${eventDisabled ? "opacity-60 grayscale" : ""}`}/>
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   {eventDisabled && (
                     <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs dark:border-amber-500/30 dark:bg-amber-500/10">
                       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"/>
                       <div>
                         <p className="font-semibold text-amber-800 dark:text-amber-200">This event has been disabled by the owner.</p>
-                        <p className="mt-0.5 text-amber-700 dark:text-amber-300">Please email the event organizer for refund or further information.</p>
+                        <p className="mt-0.5 text-amber-700 dark:text-amber-300">Please contact the event organizer for further information.</p>
                       </div>
                     </div>
                   )}

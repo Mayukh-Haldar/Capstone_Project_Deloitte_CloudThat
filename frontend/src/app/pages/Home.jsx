@@ -7,6 +7,7 @@ import { eventApi, getEventStatusLabel, isPubliclyDiscoverableEvent } from "../l
 import { ApiClientError } from "../lib/http-client";
 import { useAuthSession } from "../lib/auth-storage";
 import { ticketingApi } from "../lib/ticketing-api";
+import { notificationApi } from "../lib/notification-api";
 const heroShowcaseImages = [
     {
         src: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&fm=webp&w=900&q=72",
@@ -53,6 +54,9 @@ export function Home() {
     const [eventsCarouselIndex, setEventsCarouselIndex] = useState(0);
     const [testimonialsIndex, setTestimonialsIndex] = useState(0);
     const [eventsTransitionDir, setEventsTransitionDir] = useState(1);
+    const [newsletterEmail, setNewsletterEmail] = useState("");
+    const [newsletterStatus, setNewsletterStatus] = useState("idle"); // "idle" | "loading" | "success" | "error"
+    const [newsletterMessage, setNewsletterMessage] = useState("");
     const [testimonialsTransitionDir, setTestimonialsTransitionDir] = useState(1);
     const [eventsAnimating, setEventsAnimating] = useState(false);
     const [testimonialsAnimating, setTestimonialsAnimating] = useState(false);
@@ -555,13 +559,46 @@ export function Home() {
                 Get the latest trends in event management and exclusive early access to platform updates.
               </p>
             </div>
-            <form className="flex w-full flex-col gap-2.5 sm:flex-row lg:w-auto">
-              <input placeholder="Enter your email" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-2 focus:ring-[#1132d4]/20 dark:border-white/15 dark:bg-white/5 lg:w-72"/>
-              <button className="rounded-xl bg-[#1132d4] px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-700/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0f2dc0] hover:shadow-md hover:shadow-blue-700/25">
-                Subscribe
+            <form
+              className="flex w-full flex-col gap-2.5 sm:flex-row lg:w-auto"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newsletterEmail.trim()) return;
+                setNewsletterStatus("loading");
+                setNewsletterMessage("");
+                try {
+                  const res = await notificationApi.subscribeNewsletter(newsletterEmail.trim());
+                  setNewsletterStatus("success");
+                  setNewsletterMessage(res?.message || "Subscribed! Check your inbox for a welcome email.");
+                  setNewsletterEmail("");
+                } catch {
+                  setNewsletterStatus("error");
+                  setNewsletterMessage("Something went wrong. Please try again.");
+                }
+              }}
+            >
+              <input
+                type="email"
+                required
+                value={newsletterEmail}
+                onChange={(e) => { setNewsletterEmail(e.target.value); setNewsletterStatus("idle"); }}
+                placeholder="Enter your email"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-[#1132d4] focus:ring-2 focus:ring-[#1132d4]/20 dark:border-white/15 dark:bg-white/5 lg:w-72"
+              />
+              <button
+                type="submit"
+                disabled={newsletterStatus === "loading" || newsletterStatus === "success"}
+                className="rounded-xl bg-[#1132d4] px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-700/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0f2dc0] hover:shadow-md hover:shadow-blue-700/25 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
+              >
+                {newsletterStatus === "loading" ? "Subscribing…" : newsletterStatus === "success" ? "Subscribed ✓" : "Subscribe"}
               </button>
             </form>
           </div>
+          {newsletterMessage && (
+            <p className={`mt-4 text-sm font-medium ${newsletterStatus === "success" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+              {newsletterMessage}
+            </p>
+          )}
         </div>
       </section>
     </div>);

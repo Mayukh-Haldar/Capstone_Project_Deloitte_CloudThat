@@ -71,5 +71,14 @@ export const notificationApi = {
             body: { token, platform },
             auth: true
         });
+    },
+    async subscribeNewsletter(email) {
+        const response = await request({
+            url: notificationApiPath("/notifications/newsletter/subscribe"),
+            method: "POST",
+            body: { email },
+            auth: false
+        });
+        return response.data;
     }
 };

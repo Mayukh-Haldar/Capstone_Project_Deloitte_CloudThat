@@ -10,6 +10,7 @@ const templateRoutes = require("./routes/templates");
 const preferenceRoutes = require("./routes/preferences");
 const webhookRoutes = require("./routes/webhooks");
 const pushTokenRoutes = require("./routes/pushTokens");
+const newsletterRoutes = require("./routes/newsletter");
 const { notFound } = require("./middleware/notFound");
 const { errorHandler } = require("./middleware/errorHandler");
 const { metricsHandler, metricsMiddleware } = require("./observability/metrics");
@@ -42,6 +43,7 @@ const createApp = ({ io = null } = {}) => {
   app.use("/api/v1/notifications/preferences", preferenceRoutes);
   app.use("/api/v1/notifications/webhook-subscriptions", webhookRoutes);
   app.use("/api/v1/notifications/push-tokens", pushTokenRoutes);
+  app.use("/api/v1/notifications/newsletter", newsletterRoutes);
   app.use("/api/v1/notifications", createNotificationRouter());
 
   app.use(notFound);

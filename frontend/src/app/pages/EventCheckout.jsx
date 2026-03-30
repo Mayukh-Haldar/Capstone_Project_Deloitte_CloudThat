@@ -227,11 +227,13 @@ export function EventCheckout() {
             }, `${id}-${ticketTypeId}-${Date.now()}`);
             if (ticketType.price > 0) {
                 try {
+                    const taxes = Math.round(ticketType.price * 0.08 * 100) / 100;
+                    const totalAmount = Math.round((ticketType.price + taxes) * 100) / 100;
                     const payment = await financeApi.initiatePayment({
                         eventId: id,
                         eventName: eventDetail.event.title || "Event registration",
                         registrationId: registration.registrationId,
-                        amount: ticketType.price,
+                        amount: totalAmount,
                         currency: "INR",
                         paymentMethod: "CARD",
                         customerEmail: customerDetails.email,
@@ -504,7 +506,19 @@ export function EventCheckout() {
                 <CreditCard className="size-4"/>
                 Payable now
               </p>
-              <p className="mt-1 text-2xl font-black">{formatCurrency(ticketType.price, "INR")}</p>
+              {ticketType.price > 0 ? (() => {
+                const taxes = Math.round(ticketType.price * 0.08 * 100) / 100;
+                const totalAmount = Math.round((ticketType.price + taxes) * 100) / 100;
+                return (
+                  <>
+                    <div className="mt-2 space-y-1 text-sm text-slate-500 dark:text-slate-400">
+                      <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(ticketType.price, "INR")}</span></div>
+                      <div className="flex justify-between"><span>Taxes &amp; Fees (8%)</span><span>{formatCurrency(taxes, "INR")}</span></div>
+                    </div>
+                    <p className="mt-2 pt-2 border-t border-slate-100 dark:border-white/10 text-2xl font-black">{formatCurrency(totalAmount, "INR")}</p>
+                  </>
+                );
+              })() : <p className="mt-1 text-2xl font-black">Free</p>}
             </div>
 
             <div className="rounded-2xl border border-slate-200 p-4 dark:border-white/10">
