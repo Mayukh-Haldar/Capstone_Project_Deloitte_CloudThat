@@ -14,9 +14,48 @@ This repository includes a Docker-based local Vault setup for backend runtime se
 
 For this project, you do not need to install Vault manually on Windows if you use the Docker flow below.
 
+On Linux, the repo now includes equivalent Bash scripts that follow the same Vault-backed Docker workflow.
+
 This Vault path does not require a `.env` file. Sensitive values are stored in an encrypted local Windows secret store outside the repository and are loaded into memory only when the Vault startup script runs.
 
 ### Docker-Based Vault For This Repo
+
+Linux quick start on this machine:
+
+```bash
+chmod +x ./scripts/*.sh ./scripts/vault/*.sh
+./scripts/bootstrap-local-vault-machine.sh
+```
+
+The Linux flow stores secrets in `.secrets/local-vault-secrets.enc`, encrypted with OpenSSL AES-256. By default the scripts prompt for a passphrase. If you want non-interactive reuse, export:
+
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+```
+
+Useful Linux commands:
+
+```bash
+./scripts/set-local-vault-secrets.sh
+./scripts/set-local-vault-secrets.sh --reveal-bootstrap-password
+./scripts/set-local-vault-secrets.sh --import-from-env-file ./.env
+./scripts/set-local-vault-secrets.sh --import-from-env-file ./.env --import-all-from-env-file
+./scripts/set-local-vault-secrets.sh --list-stored-keys
+./scripts/set-local-vault-secrets.sh --change-passphrase
+./scripts/start-local-vault.sh
+./scripts/rebuild-local-vault.sh
+./scripts/rebuild-local-vault.sh --skip-build --services kafka notification-service
+./scripts/stop-local-vault.sh
+./scripts/stop-local-vault.sh --remove-volumes
+```
+
+For a non-interactive passphrase change on Linux:
+
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='current-passphrase'
+export EVENTZEN_LOCAL_VAULT_NEW_PASSPHRASE='new-passphrase'
+./scripts/set-local-vault-secrets.sh --change-passphrase
+```
 
 Recommended one-command bootstrap on a fresh Windows machine:
 
@@ -29,6 +68,14 @@ This will:
 - verify Docker is installed and responding
 - create or refresh the encrypted local secret store under `.secrets/local-vault-secrets.dpapi`
 - start the Vault-backed Docker stack
+
+Linux prerequisites for the Bash flow:
+
+- Docker with `docker compose`
+- `openssl`
+- `jq`
+- `python3`
+- `ss` from `iproute2`
 
 Generated secrets are not written into tracked repository files. They stay in your local DPAPI-protected store unless you explicitly reveal them.
 

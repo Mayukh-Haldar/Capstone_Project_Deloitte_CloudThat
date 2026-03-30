@@ -24,6 +24,7 @@ Thumbs.db
 vendors.env
 env/
 .secrets/local-vault-secrets.dpapi
+.secrets/local-vault-secrets.enc
 .secrets/local-vault-ports.json
 /nginx/
 .branch-worktrees/

@@ -1077,9 +1077,9 @@ Deloitte_CloudThat_Capstone_Project/
 
 ## 🔐 HashiCorp Vault Setup
 
-This repository includes a Docker-based local Vault setup for backend runtime secrets. You do not need to install Vault manually on Windows. Sensitive values are stored in an encrypted local Windows secret store using DPAPI, keeping your configuration out of the repository, and are loaded into memory only when the Vault startup script runs.
+This repository includes a Docker-based local Vault setup for backend runtime secrets. You do not need to install Vault manually on Windows or Linux. On Windows, sensitive values are stored in an encrypted local Windows secret store using DPAPI. On Linux, the equivalent Bash flow stores secrets in `.secrets/local-vault-secrets.enc`, encrypted with OpenSSL, and loads them into memory only when the Vault startup script runs.
 
-### Step-by-Step Setup
+### Windows
 
 **1. Copy Environment Configuration**
 ```powershell
@@ -1111,7 +1111,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-local-vault.ps1
 > - Rerunning this script while the stack is already running will cause it to query available ports and potentially alter host port mappings.
 > - The Vault UI will be available at `http://localhost:8200/ui`
 
-### Platform Rebuilds
+#### Windows Rebuilds
 
 To rebuild the Vault-backed stack in place without reassigning host ports:
 ```powershell
@@ -1123,7 +1123,7 @@ Rebuild only specific services while preserving current port mappings:
 powershell -ExecutionPolicy Bypass -File .\scripts\rebuild-local-vault.ps1 -Services auth-service
 ```
 
-### Stopping the Platform
+#### Windows Stop Commands
 
 Stop the local Vault stack with:
 ```powershell
@@ -1133,6 +1133,70 @@ powershell -ExecutionPolicy Bypass -File .\scripts\stop-local-vault.ps1
 For a clean reset that also removes volumes:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\stop-local-vault.ps1 -RemoveVolumes
+```
+
+### Linux
+
+**1. Copy Environment Configuration**
+```bash
+cp .env.example .env
+```
+
+**2. Configure Secrets**
+Replace all the placeholder secrets in `.env` with real values.
+
+**3. Import Secrets into the Encrypted Local Store**
+Import the managed secret keys from your `.env` file into the encrypted store:
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/set-local-vault-secrets.sh --import-from-env-file ./.env
+```
+*(Only the managed secret keys are imported. Non-secret config values are ignored.)*
+
+**4. Bootstrap Vault Environment (First Run Only)**
+This one-command bootstrap verifies Docker, creates the local secret store under `.secrets/local-vault-secrets.enc`, builds the Docker images, and sets up your Vault instance.
+```bash
+chmod +x ./scripts/*.sh ./scripts/vault/*.sh
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/bootstrap-local-vault-machine.sh
+```
+
+**5. Start the Local Vault Stack**
+Start the entire service stack, infrastructure, and Vault sidecar (wait ~60 seconds for health checks to pass):
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/start-local-vault.sh
+```
+> **Notes:** 
+> - Rerunning this script while the stack is already running will cause it to query available ports and potentially alter host port mappings.
+> - The Vault UI will be available at `http://localhost:8200/ui`
+
+#### Linux Rebuilds
+
+To rebuild the Vault-backed stack in place without reassigning host ports:
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/rebuild-local-vault.sh
+```
+
+Rebuild only specific services while preserving current port mappings:
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/rebuild-local-vault.sh --services auth-service
+```
+
+#### Linux Stop Commands
+
+Stop the local Vault stack with:
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/stop-local-vault.sh
+```
+
+For a clean reset that also removes volumes:
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+./scripts/stop-local-vault.sh --remove-volumes
 ```
 
 ---

@@ -2,7 +2,9 @@
 
 This repository now includes an optional local Docker mode that replaces `.env`-driven backend runtime secrets with a local HashiCorp Vault OSS workflow.
 
-On Windows, the Vault startup flow now reads secrets from an encrypted local store outside the repository instead of using `.env`.
+On Windows, the Vault startup flow reads secrets from a DPAPI-encrypted local store outside the repository instead of using `.env`.
+
+On Linux, the repo now includes equivalent Bash scripts that use an OpenSSL-encrypted local store at `.secrets/local-vault-secrets.enc`.
 
 ## What It Does
 
@@ -39,6 +41,64 @@ On Windows, the Vault startup flow now reads secrets from an encrypted local sto
 - `scripts/start-local-vault.ps1`
 
 ## Startup Steps
+
+### Linux
+
+1. Make sure Docker is installed and responding.
+2. Make the new scripts executable once:
+
+```bash
+chmod +x ./scripts/*.sh ./scripts/vault/*.sh
+```
+
+3. Optional but recommended for fewer prompts:
+
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
+```
+
+4. Bootstrap the Linux machine and start the stack:
+
+```bash
+./scripts/bootstrap-local-vault-machine.sh
+```
+
+5. If you want to manage the steps separately:
+
+```bash
+./scripts/set-local-vault-secrets.sh
+./scripts/start-local-vault.sh
+```
+
+6. To inspect the generated bootstrap admin password:
+
+```bash
+./scripts/set-local-vault-secrets.sh --reveal-bootstrap-password
+```
+
+To re-encrypt an existing Linux secret store with a new passphrase:
+
+```bash
+./scripts/set-local-vault-secrets.sh --change-passphrase
+```
+
+Or non-interactively:
+
+```bash
+export EVENTZEN_LOCAL_VAULT_PASSPHRASE='current-passphrase'
+export EVENTZEN_LOCAL_VAULT_NEW_PASSPHRASE='new-passphrase'
+./scripts/set-local-vault-secrets.sh --change-passphrase
+```
+
+7. To stop or rebuild while preserving the saved port mappings:
+
+```bash
+./scripts/rebuild-local-vault.sh
+./scripts/stop-local-vault.sh
+./scripts/stop-local-vault.sh --remove-volumes
+```
+
+### Windows
 
 1. Make sure Docker Desktop is running.
 2. Recommended on a fresh Windows machine:
@@ -87,6 +147,13 @@ If you need to see the generated bootstrap admin password, opt in explicitly:
 - Password display: bootstrap password is not printed unless `-RevealBootstrapPassword` is supplied
 - Optional overrides: set supported secret environment variables in the current PowerShell session before running `./scripts/set-local-vault-secrets.ps1` to persist them into the encrypted store
 - First-run automation: `./scripts/start-local-vault.ps1` now auto-creates the secret store if it is missing
+
+For Linux:
+
+- Store location: `.secrets/local-vault-secrets.enc`
+- Protection: OpenSSL AES-256-CBC with PBKDF2
+- Access model: anyone with the encrypted file and passphrase can decrypt it, so keep both local and private
+- Optional automation: export `EVENTZEN_LOCAL_VAULT_PASSPHRASE` before running the Bash scripts
 
 ## How the Secret Flow Works
 
