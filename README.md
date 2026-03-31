@@ -1,4 +1,4 @@
-<h1 align="center">EventZen</h1>
+﻿<h1 align="center">EventZen</h1>
 
 <p align="center">
   <strong>A production-grade, polyglot microservices platform for end-to-end event management</strong>
@@ -26,6 +26,8 @@
 
 ## 📑 Table of Contents
 
+- [🎬 Project Walkthrough](#-project-walkthrough)
+- [📋 Project Report](#-project-report)
 - [🌟 Project Overview](#-project-overview)
 - [🏗 Architecture](#-architecture)
 - [💻 Tech Stack](#-tech-stack)
@@ -43,6 +45,22 @@
 - [🧪 Testing](#-testing)
 - [🌐 Access Points](#-access-points)
 - [📄 License](#-license)
+
+---
+
+## 🎬 Project Walkthrough
+
+You can follow this walkthrough video to set up and test this project on your local machine. The video covers the complete setup process, from configuring the environment to running and testing all services end-to-end.
+
+[▶ Watch the Project Walkthrough on Google Drive](https://drive.google.com/file/d/1nUyPXNiBwQ2SrZ01ZVCTsMFdpKy6Hv4y/view?usp=sharing)
+
+---
+
+## 📋 Project Report
+
+A comprehensive capstone project report documenting the architecture, design decisions, implementation details, and outcomes of the EventZen platform has been prepared as part of the Deloitte x CloudThat Capstone Project. The report provides an in-depth technical and functional overview of the system, covering all major components and the engineering choices that underpin them.
+
+[📄 View the Capstone Project Report (PDF)](docs/Capstone-Project-Report-Mayukh-Haldar.pdf)
 
 ---
 
@@ -851,9 +869,6 @@ All diagram and documentation files are located in the `docs/` directory:
 
 | File | Type | Description |
 |------|------|-------------|
-| `docs/EventZen_System_Design.md` | Architecture | Detailed system design, service contracts, and infrastructure decisions |
-| `docs/pdf/EventZen_System_Design.pdf` | Architecture | System design document (PDF) |
-| `docs/pdf/EventZen_PRD_v5.pdf` | PRD | Product requirements document v5 (PDF) |
 | `docs/Capstone-Project-Report-Mayukh-Haldar.pdf` | Report | Full capstone project report |
 
 ### User Flow Diagrams
