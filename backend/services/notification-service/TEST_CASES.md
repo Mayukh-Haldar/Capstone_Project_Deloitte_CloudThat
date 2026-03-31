@@ -98,7 +98,7 @@ Grand total: **64 automated tests** + **26 Postman system tests** = **90 tests**
 
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
-| NTF-IT-006 | Admin lists templates — initially empty | HTTP 200, empty array |
+| NTF-IT-006 | Admin lists templates - initially empty | HTTP 200, empty array |
 | NTF-IT-007 | Admin creates a template | HTTP 201, `templateKey` and `_id` present |
 | NTF-IT-008 | Admin updates template subject | HTTP 200, updated subject, 2 versions |
 | NTF-IT-009 | Admin previews template with variables | HTTP 200, rendered `subject` contains variable value |
@@ -155,7 +155,7 @@ Grand total: **64 automated tests** + **26 Postman system tests** = **90 tests**
 
 ---
 
-## System Tests — Postman (`postman/NotificationService.postman_collection.json`)
+## System Tests - Postman (`postman/NotificationService.postman_collection.json`)
 
 Run with:
 ```bash
@@ -172,7 +172,7 @@ npm run test:system:postman
 
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
-| NTF-ST-002 | Internal trigger — send IN_APP notification | HTTP 202, `notifications` array populated, `notificationId` captured |
+| NTF-ST-002 | Internal trigger - send IN_APP notification | HTTP 202, `notifications` array populated, `notificationId` captured |
 | NTF-ST-003 | Attendee lists own inbox | HTTP 200, paginated response, `totalElements >= 1` |
 | NTF-ST-004 | Attendee retrieves single notification | HTTP 200, `_id` matches, `deliveryLogs` array present |
 | NTF-ST-005 | Attendee marks notification as read | HTTP 200, `status: "READ"`, `readAt` set |
@@ -197,8 +197,8 @@ npm run test:system:postman
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
 | NTF-ST-016 | Get default preferences for user | HTTP 200, `email`, `push`, `inApp` objects present |
-| NTF-ST-017 | Update preferences — mute email, restrict push | HTTP 200, `email.enabled: false` |
-| NTF-ST-018 | Re-fetch — muted preference persists | HTTP 200, `email.enabled` still `false` |
+| NTF-ST-017 | Update preferences - mute email, restrict push | HTTP 200, `email.enabled: false` |
+| NTF-ST-018 | Re-fetch - muted preference persists | HTTP 200, `email.enabled` still `false` |
 
 ### Push Tokens
 

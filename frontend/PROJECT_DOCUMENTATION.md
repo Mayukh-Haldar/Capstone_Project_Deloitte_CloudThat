@@ -170,29 +170,29 @@ The theme uses a cohesive color system:
 src/
 ├── app/
 │   ├── components/
-│   │   ├── Navigation.tsx       # Main navigation
-│   │   ├── ThemeToggle.tsx      # Theme switcher
-│   │   ├── RootLayout.tsx       # App layout wrapper
-│   │   └── NotFound.tsx         # 404 page
+│   │   ├── Navigation.jsx       # Main navigation
+│   │   ├── ThemeToggle.jsx      # Theme switcher
+│   │   ├── RootLayout.jsx       # App layout wrapper
+│   │   └── NotFound.jsx         # 404 page
 │   ├── pages/
-│   │   ├── Home.tsx             # Landing page wrapper
-│   │   ├── Events.tsx           # Events page wrapper
-│   │   ├── Admin.tsx            # Admin dashboard wrapper
-│   │   ├── Venues.tsx           # Venues page wrapper
-│   │   ├── Finance.tsx          # Finance page wrapper
-│   │   └── Reports.tsx          # Reports page wrapper
-│   ├── routes.tsx               # Route definitions
-│   └── App.tsx                  # Root component
+│   │   ├── Home.jsx             # Landing page wrapper
+│   │   ├── Events.jsx           # Events page wrapper
+│   │   ├── Admin.jsx            # Admin dashboard wrapper
+│   │   ├── Venues.jsx           # Venues page wrapper
+│   │   ├── Finance.jsx          # Finance page wrapper
+│   │   └── Reports.jsx          # Reports page wrapper
+│   ├── routes.jsx               # Route definitions
+│   └── App.jsx                  # Root component
 ├── imports/
-│   ├── LandingPage.tsx          # Landing screen source
-│   ├── Authentication.tsx       # Authentication screen source
-│   ├── EventDiscoveryDetails.tsx
-│   ├── AdminDashboard.tsx
-│   ├── VenueVendorManagement.tsx
-│   ├── StaffQrCheckIn.tsx
-│   ├── AttendeeTicketWallet.tsx
-│   ├── FinanceReportingDashboard.tsx
-│   └── DetailedExpenseReport.tsx
+│   ├── LandingPage.jsx          # Landing screen source
+│   ├── Authentication.jsx       # Authentication screen source
+│   ├── EventDiscoveryDetails.jsx
+│   ├── AdminDashboard.jsx
+│   ├── VenueVendorManagement.jsx
+│   ├── StaffQrCheckIn.jsx
+│   ├── AttendeeTicketWallet.jsx
+│   ├── FinanceReportingDashboard.jsx
+│   └── DetailedExpenseReport.jsx
 └── styles/
     ├── theme.css                # Theme variables
     └── fonts.css                # Font imports
@@ -272,8 +272,8 @@ Edit `/src/styles/theme.css`:
 
 ### Adding New Pages
 1. Create component in `/src/app/pages/`
-2. Add route in `/src/app/routes.tsx`
-3. Update navigation in `/src/app/components/Navigation.tsx`
+2. Add route in `/src/app/routes.jsx`
+3. Update navigation in `/src/app/components/Navigation.jsx`
 
 ## 🤝 Contributing
 

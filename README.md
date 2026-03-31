@@ -32,6 +32,7 @@
 - [🧩 Microservices Breakdown](#-microservices-breakdown)
 - [🔌 API Reference](#-api-reference)
 - [✨ Features](#-features)
+- [🌟 Novelty & Advanced Features](#-novelty--advanced-features)
 - [🗄 Database Schema](#-database-schema)
 - [🔐 Security Implementation](#-security-implementation)
 - [📨 Event-Driven Architecture (Kafka)](#-event-driven-architecture-kafka)
@@ -55,7 +56,7 @@
 | **Vendors / Organizers** | Create & manage events end-to-end · Book venues · Hire vendors · Configure ticket types · Run live QR check-ins · Track budgets |
 | **Customers / Attendees** | Browse & discover events · Register and pay for tickets · Manage QR-coded digital ticket wallet · Configure notification preferences |
 
-The platform is built as a set of independently deployable **polyglot microservices** — combining **Java (Spring Boot 4.0)**, **C# (.NET 10)**, and **Node.js (Express)** for backend services — all containerized via **Docker Compose**, fronted by an **Nginx API Gateway**, secured by **HashiCorp Vault** for zero-secret-at-rest credential management, and interconnected through **Apache Kafka** for asynchronous event-driven communication.
+The platform is built as a set of independently deployable **polyglot microservices** - combining **Java (Spring Boot 4.0)**, **C# (.NET 10)**, and **Node.js (Express)** for backend services - all containerized via **Docker Compose**, fronted by an **Nginx API Gateway**, secured by **HashiCorp Vault** for zero-secret-at-rest credential management, and interconnected through **Apache Kafka** for asynchronous event-driven communication.
 
 **Repository:** [github.com/Mayukh-Haldar/Capstone_Project_Deloitte_CloudThat](https://github.com/Mayukh-Haldar/Capstone_Project_Deloitte_CloudThat) · Branch: `EXPORT_GITHUB_DOCKER`
 
@@ -98,7 +99,7 @@ EventZen follows a microservices architecture with an Nginx API Gateway pattern,
 │  Apache Kafka    HashiCorp Vault    MinIO Object Storage  │
 │  Prometheus      Grafana            Loki + Promtail       │
 │  Tempo (Traces)  OpenTelemetry      Firebase (FCM)        │
-│  Razorpay        Nginx Prod Config  EC2 Autoscaler        │
+│  Razorpay        Nginx Reverse Proxy                       │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -206,7 +207,6 @@ flowchart TB
 | Logging | Loki + Promtail | Log aggregation across all containers |
 | Distributed Tracing | Tempo + OpenTelemetry | Cross-service trace correlation |
 | Orchestration | Docker Compose | Multi-container orchestration (two compose files) |
-| Cloud Deployment | AWS EC2 | EC2 bootstrap, autoscaler, Nginx prod config scripts |
 
 ---
 
@@ -225,7 +225,7 @@ flowchart TB
 | Role System | `ADMIN` / `VENDOR` / `ORGANIZER` / `CUSTOMER` / `ATTENDEE` with role-based guards |
 | MFA | TOTP-based MFA enrollment (`/auth/mfa/setup`, `/auth/mfa/verify`) |
 | Account Request System | `VENDOR_ACCESS`, `DEACTIVATE`, `REACTIVATE`, `GDPR_DELETE` lifecycle requests with admin approval |
-| PII Encryption | `FieldEncryptionService` — AES encryption for personally identifiable fields |
+| PII Encryption | `FieldEncryptionService` - AES encryption for personally identifiable fields |
 | Audit Logging | `AuditService` records sensitive operations with actor and timestamp |
 | Data Seeder | `DataSeeder` bootstraps default admin, roles, and permissions on startup |
 | Security | bcrypt hashing, Spring Security, JWT filter, `@ControllerAdvice` global error handler |
@@ -257,7 +257,7 @@ flowchart TB
 |---------|---------|
 | Venue Management | CRUD for venues; halls sub-resource; capacity, address, price per day |
 | Availability | Calendar-aware booking collision detection via `/venues/{id}/availability` |
-| Venue Bookings | Full booking lifecycle — create, confirm payment, cancel, delete |
+| Venue Bookings | Full booking lifecycle - create, confirm payment, cancel, delete |
 | Vendor Profiles | Service type, rating, active status |
 | Vendor Contracts | Vendor-event contract lifecycle (`PENDING → ACTIVE → COMPLETED`) |
 | Vendor Reviews | Rating and comment submission per vendor |
@@ -279,9 +279,9 @@ flowchart TB
 | Seat Maps | `SeatMapController` + `SeatHub` (SignalR) for real-time distributed seat reservation locking |
 | Seat Reservation | Distributed lock via `seat_reservations` with `reserved_until` expiry |
 | QR Ticket Pass | `QrCodeService` generates QR; `TicketDeliveryAssetService` assembles printable ticket pass |
-| Ticket Pass Storage | `TicketPassStorageService` — MinIO-backed storage for generated passes |
-| Check-In | `CheckInController` — QR scan validation, CHECKIN_LOG, live stats |
-| Attendees | `AttendeesController` — bulk CSV import for invite-only events |
+| Ticket Pass Storage | `TicketPassStorageService` - MinIO-backed storage for generated passes |
+| Check-In | `CheckInController` - QR scan validation, CHECKIN_LOG, live stats |
+| Attendees | `AttendeesController` - bulk CSV import for invite-only events |
 | Waitlist | Auto-promotion on cancellation |
 | Idempotency | Duplicate-safe registrations via `Idempotency-Key` header |
 | Internal Payment Confirm | `/internal/registrations/{id}/confirm-payment` called by Finance Service |
@@ -299,9 +299,9 @@ flowchart TB
 |---------|---------|
 | Budgets | Per-event budget creation with line items; admin approval/lock flow |
 | Expenses | Expense logging against budget items with categories |
-| Payments | Razorpay integration — order creation, frontend verification, webhook handling |
+| Payments | Razorpay integration - order creation, frontend verification, webhook handling |
 | Invoice PDF | `InvoiceAssetService` generates invoice PDF; stored to MinIO via `StorageProperties` |
-| Financial Reports | `FinancialReportService` — revenue, expenses, P&L per event |
+| Financial Reports | `FinancialReportService` - revenue, expenses, P&L per event |
 | Cross-Service Calls | `TicketingClient` calls Ticketing to confirm registration; `VenueBookingClient` confirms venue booking payments; `NotificationClient` dispatches payment notifications |
 | Security | JWT filter with Spring Security |
 | Observability | Micrometer Prometheus at `/actuator/prometheus` |
@@ -319,11 +319,11 @@ flowchart TB
 | Templates | Handlebars-based `NotificationTemplate` model; create/update/preview admin API |
 | Preferences | Per-user channel opt-in (`NotificationPreference`) |
 | Push Tokens | FCM device token registration/deregistration (`PushToken` model) |
-| WebSocket | `socketService.js` — real-time in-app notification delivery |
+| WebSocket | `socketService.js` - real-time in-app notification delivery |
 | Webhook Subscriptions | External webhook subscriber management (`WebhookSubscription` model) |
-| Queue Service | `queueService.js` — internal notification delivery queue |
-| Email Provider | `emailProvider.js` — Nodemailer SMTP delivery |
-| Push Provider | `pushProvider.js` — Firebase Admin SDK FCM delivery |
+| Queue Service | `queueService.js` - internal notification delivery queue |
+| Email Provider | `emailProvider.js` - Nodemailer SMTP delivery |
+| Push Provider | `pushProvider.js` - Firebase Admin SDK FCM delivery |
 | Newsletter | Newsletter subscriber management + subscription routes |
 | Observability | prom-client metrics at `/metrics` |
 | API Docs | OpenAPI spec via `openapi.js` |
@@ -335,7 +335,7 @@ flowchart TB
 
 All endpoints require `Authorization: Bearer <token>` unless marked **Public**. The Swagger UI aggregation hub is available at `http://localhost/docs/` when the stack is running.
 
-### Auth Service — Base: `/api/v1` · Port `8081`
+### Auth Service - Base: `/api/v1` · Port `8081`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -367,7 +367,7 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 | PATCH | `/account-requests/admin/{id}/reject` | ADMIN | Reject an account request |
 | GET | `/` | Public | Service info / health check |
 
-### Event Service — Base: `/api/v1` · Port `8082`
+### Event Service - Base: `/api/v1` · Port `8082`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -400,7 +400,7 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 | POST | `/events/internal/venue-bookings/{bookingId}/cancelled` | Internal | Notify event service that a venue booking was cancelled |
 | GET | `/` | Public | Service info / health check |
 
-### Ticketing Service — Base: `/api/v1` · Port `8084`
+### Ticketing Service - Base: `/api/v1` · Port `8084`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -425,7 +425,7 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 | GET | `/tickets/me` | JWT | Get all tickets for the current user |
 | GET | `/health` | Public | Service health check |
 
-### Finance Service — Base: `/api/v1` · Port `8085`
+### Finance Service - Base: `/api/v1` · Port `8085`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -442,7 +442,7 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 | POST | `/payments/verify` | JWT | Verify payment from frontend and confirm registration |
 | GET | `/` | Public | Service info / health check |
 
-### Venue-Vendor Service — Base: `/api/v1` · Port `8083`
+### Venue-Vendor Service - Base: `/api/v1` · Port `8083`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -465,7 +465,7 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 | PATCH | `/contracts/{id}/status` | VENDOR/ADMIN | Update contract status |
 | GET | `/health` | Public | Service health check |
 
-### Notification Service — Base: `/api/v1` · Port `8086`
+### Notification Service - Base: `/api/v1` · Port `8086`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -495,59 +495,118 @@ All endpoints require `Authorization: Bearer <token>` unless marked **Public**. 
 ## ✨ Features
 
 ### 🔐 Authentication & Authorization
-- **OTP-Verified Registration** — Email verification token (sent as link) with expiry & resend
-- **JWT Authentication** — Access token + refresh token rotation with HTTP-only cookies
-- **Google OAuth** — Sign in with Google; auto-provisions account on first login
-- **MFA** — TOTP-based multi-factor authentication enrollment from settings
-- **Role-Based Access Control** — Admin, Vendor, Organizer, Customer, Attendee roles with Spring Security guards
-- **Account Lifecycle** — Full self-service lifecycle: deactivation, reactivation, GDPR deletion, all with admin approval
-- **PII Encryption** — AES encryption for personally identifiable fields
+- **OTP-Verified Registration** - Email verification token (sent as link) with expiry & resend
+- **JWT Authentication** - Access token + refresh token rotation with HTTP-only cookies
+- **Google OAuth** - Sign in with Google; auto-provisions account on first login
+- **MFA** - TOTP-based multi-factor authentication enrollment from settings
+- **Role-Based Access Control** - Admin, Vendor, Organizer, Customer, Attendee roles with Spring Security guards
+- **Account Lifecycle** - Full self-service lifecycle: deactivation, reactivation, GDPR deletion, all with admin approval
+- **PII Encryption** - AES encryption for personally identifiable fields
 
 ### 🎫 Event & Ticketing
-- **Full Event Lifecycle** — Draft → Pending Approval → Published → Active → Ended → Archived with state machine enforcement
-- **Multi-Session Events** — Agenda management with session scheduling and reordering
-- **Multi-Tier Tickets** — VIP, General, Standby with per-type pricing & capacity
-- **Seat Selection** — MongoDB-backed distributed seat reservation locking; SignalR hub broadcasts live seat-status updates to connected clients
-- **Digital Ticket Wallet** — QR code tickets with PDF export via jsPDF
-- **QR Check-In** — Browser-based QR scanning (jsQR) at event entry with live statistics
-- **Waitlist System** — Auto-promotion when capacity frees up on cancellation
-- **Bulk Attendee Import** — CSV import for invite-only events
+- **Full Event Lifecycle** - Draft → Pending Approval → Published → Active → Ended → Archived with state machine enforcement
+- **Multi-Session Events** - Agenda management with session scheduling and reordering
+- **Multi-Tier Tickets** - VIP, General, Standby with per-type pricing & capacity
+- **Seat Selection** - MongoDB-backed distributed seat reservation locking; SignalR hub broadcasts live seat-status updates to connected clients
+- **Digital Ticket Wallet** - QR code tickets with PDF export via jsPDF
+- **QR Check-In** - Browser-based QR scanning (jsQR) at event entry with live statistics
+- **Waitlist System** - Auto-promotion when capacity frees up on cancellation
+- **Bulk Attendee Import** - CSV import for invite-only events
 
 ### 💰 Finance & Payments
-- **Budget Management** — Per-event budgets with line item tracking and admin approval/lock
-- **Expense Tracking** — Categorized expenses logged against budget items
-- **Razorpay Integration** — Real payment flow: order creation → browser modal → HMAC signature verification → webhook confirmation
-- **Invoice PDF** — Server-generated invoice PDFs stored to MinIO, downloadable by attendees
-- **Financial Reports** — Revenue, expenses, P&L per event
+- **Budget Management** - Per-event budgets with line item tracking and admin approval/lock
+- **Expense Tracking** - Categorized expenses logged against budget items
+- **Razorpay Integration** - Real payment flow: order creation → browser modal → HMAC signature verification → webhook confirmation
+- **Invoice PDF** - Server-generated invoice PDFs stored to MinIO, downloadable by attendees
+- **Financial Reports** - Revenue, expenses, P&L per event
 
 ### 🏢 Venue & Vendor Management
-- **Venue CRUD** — Capacity, location, halls, price per day
-- **Availability Check** — Calendar-aware collision detection prevents double-booking
-- **Vendor Catalog** — Service type, rating, active status
-- **Contract Lifecycle** — Pending → Active → Completed contract management
-- **Vendor Reviews** — Rating and comment submission
+- **Venue CRUD** - Capacity, location, halls, price per day
+- **Availability Check** - Calendar-aware collision detection prevents double-booking
+- **Vendor Catalog** - Service type, rating, active status
+- **Contract Lifecycle** - Pending → Active → Completed contract management
+- **Vendor Reviews** - Rating and comment submission
 
 ### 🔔 Real-Time Notifications
-- **Multi-Channel Delivery** — In-App (WebSocket), Email (Nodemailer SMTP), Push (Firebase FCM)
-- **Kafka-Driven** — All notifications triggered by domain events across services
-- **Handlebars Templates** — Admin-managed reusable templates with live preview
-- **Delivery Logs** — Per-notification delivery outcome tracking
-- **Webhook Subscriptions** — External subscribers can register for notification events
-- **User Preferences** — Per-channel opt-in preferences
+- **Multi-Channel Delivery** - In-App (WebSocket), Email (Nodemailer SMTP), Push (Firebase FCM)
+- **Kafka-Driven** - All notifications triggered by domain events across services
+- **Handlebars Templates** - Admin-managed reusable templates with live preview
+- **Delivery Logs** - Per-notification delivery outcome tracking
+- **Webhook Subscriptions** - External subscribers can register for notification events
+- **User Preferences** - Per-channel opt-in preferences
 
 ### 📊 Analytics & Observability
-- **Admin Dashboard** — Platform-wide event, user, and financial analytics
-- **Vendor Dashboard** — Per-vendor event portfolio, bookings, budget overview
-- **Recharts** — Interactive data visualizations
-- **Distributed Tracing** — Correlated traces via OpenTelemetry + Tempo, visible in Grafana
-- **Log Aggregation** — Loki + Promtail collects all container logs, queryable in Grafana
-- **Autoscaler** — EC2 systemd autoscaler monitors service load and issues `docker compose scale` commands
+- **Admin Dashboard** - Platform-wide event, user, and financial analytics
+- **Vendor Dashboard** - Per-vendor event portfolio, bookings, budget overview
+- **Recharts** - Interactive data visualizations
+- **Distributed Tracing** - Correlated traces via OpenTelemetry + Tempo, visible in Grafana
+- **Log Aggregation** - Loki + Promtail collects all container logs, queryable in Grafana
+
+---
+
+## 🌟 Novelty & Advanced Features
+
+Detailed documentation for each standout and infrastructure feature is in [`docs/features/`](./docs/features/).
+
+### 🔬 Novelty Features
+
+| Feature | Description | Doc |
+|---------|-------------|-----|
+| **MFA with TOTP** | Device-linked time-based one-time password multi-factor authentication | [→](./docs/features/novelty-mfa-totp.md) |
+| **QR Code Auto-Scanning from Video** | Real-time browser-based QR detection from live camera feed for event check-in - no hardware, no native app | [→](./docs/features/novelty-qr-video-scanning.md) |
+| **Real-Time Seat Updates** | Live seat map broadcast via WebSocket/SignalR - all concurrent users see the same seat availability simultaneously | [→](./docs/features/novelty-realtime-seat-updates.md) |
+
+### ⚙️ Advanced & Core Infrastructure Features
+
+| Feature | Role | Doc |
+|---------|------|-----|
+| **HashiCorp Vault** | Zero-secret-at-rest secrets management; Vault Agent injects credentials at container startup | [→](./docs/features/hashicorp-vault.md) |
+| **Apache Kafka** | Asynchronous inter-service event streaming and notification pipelines | [→](./docs/features/kafka.md) |
+| **Redis** | Distributed notification queue, rate limiting, and deduplication | [→](./docs/features/redis.md) |
+| **Zookeeper** | Kafka broker coordination and distributed consensus | [→](./docs/features/zookeeper.md) |
+| **Prometheus & Grafana** | Metrics scraping, alerting, and unified observability dashboards | [→](./docs/features/prometheus-grafana.md) |
+| **OpenTelemetry & Tempo** | Distributed tracing across all microservices with full span correlation | [→](./docs/features/opentelemetry-tempo.md) |
+| **Loki & Promtail** | Container log aggregation and LogQL querying in Grafana | [→](./docs/features/loki-promtail.md) |
+| **MinIO** | S3-compatible object storage for ticket passes and invoice PDFs | [→](./docs/features/minio.md) |
+| **Razorpay** | Full payment lifecycle - order creation, browser modal, HMAC verification, webhooks | [→](./docs/features/razorpay.md) |
+| **OpenStreetMap (OSM)** | Embedded interactive venue maps via Leaflet.js - no API key required | [→](./docs/features/openstreetmap.md) |
+| **Firebase FCM** | Browser and mobile push notification delivery via Firebase Cloud Messaging | [→](./docs/features/firebase-fcm.md) |
+| **Nginx Reverse Proxy** | API gateway, rate limiting, and aggregated OpenAPI docs hub | [→](./docs/features/nginx.md) |
+| **JWT & Refresh Token Rotation** | Stateless auth with HTTP-only cookie refresh token rotation | [→](./docs/features/jwt-refresh-token.md) |
+
+### 🔐 Auth & Security Features
+
+| Feature | Description | Doc |
+|---------|-------------|-----|
+| **Google OAuth Sign-In** | Server-side Google ID token verification with account linking - no passwords required | [→](./docs/features/google-oauth.md) |
+| **Field-Level Encryption** | AES-256-GCM encryption of sensitive personal data fields at rest in MySQL | [→](./docs/features/field-level-encryption.md) |
+| **Audit Logging** | Tamper-evident security audit trail of all authentication and admin actions | [→](./docs/features/audit-logging.md) |
+| **RBAC & Permissions System** | DB-driven role-permission model with Spring Security method-level enforcement | [→](./docs/features/rbac-permissions.md) |
+| **Password Reset Flow** | Secure tokenised email-based password reset with email enumeration prevention | [→](./docs/features/password-reset.md) |
+| **Account Request & Approval** | Gated onboarding - vendors and organizers require admin approval before platform access | [→](./docs/features/account-request-approval.md) |
+
+### 🔔 Notification Features
+
+| Feature | Description | Doc |
+|---------|-------------|-----|
+| **Notification Templates & Multi-Channel Delivery** | Versioned Handlebars templates dispatched via email, push, in-app, or webhook | [→](./docs/features/notification-templates.md) |
+| **Notification Preferences** | Per-user, per-channel, per-event-type delivery opt-in/opt-out | [→](./docs/features/notification-preferences.md) |
+| **Delivery Logging** | Per-attempt audit trail with status, provider, and retry tracking | [→](./docs/features/delivery-logging.md) |
+| **Newsletter Subscriptions** | Opt-in newsletter with unsubscribe flow, kept separate from transactional mail | [→](./docs/features/newsletter-subscriptions.md) |
+
+### 💰 Finance Features
+
+| Feature | Description | Doc |
+|---------|-------------|-----|
+| **Financial Reports & Budget Tracking** | Per-event budget creation, expense logging, revenue aggregation, and report generation | [→](./docs/features/financial-reports-budget.md) |
+| **Invoice & Ticket Pass Generation** | Auto-generated PDF invoices (Finance) and premium PDF ticket passes (Ticketing) stored in MinIO | [→](./docs/features/invoice-ticket-pass.md) |
+| **QR Code Generation** | HMAC-signed SVG QR codes embedded in ticket PDFs for tamper-proof entry validation | [→](./docs/features/qr-code-generation.md) |
 
 ---
 
 ## 🗄 Database Schema
 
-EventZen uses a **per-service database isolation** strategy — no cross-database queries exist between services. Internal REST endpoints handle cross-service data needs.
+EventZen uses a **per-service database isolation** strategy - no cross-database queries exist between services. Internal REST endpoints handle cross-service data needs.
 
 ### MySQL Databases (Relational Data)
 
@@ -719,12 +778,12 @@ EventZen uses a **per-service database isolation** strategy — no cross-databas
 
 ### HashiCorp Vault Integration Detail
 
-1. **Secret Seeding** — Platform secrets are encrypted locally and stored on disk before being loaded into Vault's KV store at startup:
-   - **Windows** — A PowerShell script encrypts secrets using **Windows DPAPI** (`ProtectedData.Protect`), tied to the current user profile. Stored as `.secrets/local-vault-secrets.dpapi`. Decrypted in memory by `scripts/start-local-vault.ps1` at startup.
-   - **Linux / macOS** — A Bash script encrypts secrets using **OpenSSL AES-256-CBC (PBKDF2)**. Stored as `.secrets/local-vault-secrets.enc`. Decrypted in memory by `scripts/start-local-vault.sh` at startup, using a passphrase from the `EVENTZEN_LOCAL_VAULT_PASSPHRASE` environment variable or an interactive prompt.
-2. **Vault Agent Sidecar** — A Vault Agent container authenticates to Vault using AppRole and renders secret templates from `vault/agent/eventzen.env.ctmpl` into `tmpfs` (in-memory) volumes mounted by each service container.
-3. **No `.env` Files At Rest** — Service containers read all credentials from the tmpfs-mounted rendered files. No credentials ever touch the filesystem or source control.
-4. **Vault UI** — Accessible at `http://localhost:8200/ui` during local development.
+1. **Secret Seeding** - Platform secrets are encrypted locally and stored on disk before being loaded into Vault's KV store at startup:
+   - **Windows** - A PowerShell script encrypts secrets using **Windows DPAPI** (`ProtectedData.Protect`), tied to the current user profile. Stored as `.secrets/local-vault-secrets.dpapi`. Decrypted in memory by `scripts/start-local-vault.ps1` at startup.
+   - **Linux / macOS** - A Bash script encrypts secrets using **OpenSSL AES-256-CBC (PBKDF2)**. Stored as `.secrets/local-vault-secrets.enc`. Decrypted in memory by `scripts/start-local-vault.sh` at startup, using a passphrase from the `EVENTZEN_LOCAL_VAULT_PASSPHRASE` environment variable or an interactive prompt.
+2. **Vault Agent Sidecar** - A Vault Agent container authenticates to Vault using AppRole and renders secret templates from `vault/agent/eventzen.env.ctmpl` into `tmpfs` (in-memory) volumes mounted by each service container.
+3. **No `.env` Files At Rest** - Service containers read all credentials from the tmpfs-mounted rendered files. No credentials ever touch the filesystem or source control.
+4. **Vault UI** - Accessible at `http://localhost:8200/ui` during local development.
 
 ---
 
@@ -765,7 +824,7 @@ Kafka and Zookeeper run as Docker containers within the Compose stack. **Kafka U
 |------|-----|---------|
 | **Prometheus** | `http://localhost:9090/` | Metrics scraping from all services (JVM, Node.js, .NET, custom business metrics), 15s scrape interval |
 | **Grafana** | `http://localhost:3308/` | Pre-built dashboards for service health, request rates, error rates, JVM heap |
-| **Loki + Promtail** | Internal | Log aggregation — structured logs from all containers collected and queryable in Grafana |
+| **Loki + Promtail** | Internal | Log aggregation - structured logs from all containers collected and queryable in Grafana |
 | **Tempo** | Internal | Distributed tracing storage backend |
 | **OpenTelemetry Collector** | Internal | OTLP trace collection from all services, forwarded to Tempo; internal collector metrics exposed on port 8888 are scraped directly by Prometheus |
 
@@ -801,10 +860,10 @@ All diagram and documentation files are located in the `docs/` directory:
 
 | File | Description |
 |------|-------------|
-| `docs/images/UserFlows/AdminUserFlow.png` | Admin portal user flow — login through governance, event approval, venue management, and reporting |
-| `docs/images/UserFlows/VendorUserFlow.png` | Vendor/organizer user flow — event creation, venue booking, check-in, and financial reporting |
-| `docs/images/UserFlows/CustomerUserFlow.png` | Customer user flow — event discovery, seat selection, checkout, and ticket wallet |
-| `docs/images/UserFlows/UMLDiagram.png` | UML class diagram — core entity model with relationships across all six service domains |
+| `docs/images/UserFlows/AdminUserFlow.png` | Admin portal user flow - login through governance, event approval, venue management, and reporting |
+| `docs/images/UserFlows/VendorUserFlow.png` | Vendor/organizer user flow - event creation, venue booking, check-in, and financial reporting |
+| `docs/images/UserFlows/CustomerUserFlow.png` | Customer user flow - event discovery, seat selection, checkout, and ticket wallet |
+| `docs/images/UserFlows/UMLDiagram.png` | UML class diagram - core entity model with relationships across all six service domains |
 
 ### Wireframes
 
@@ -815,15 +874,15 @@ All diagram and documentation files are located in the `docs/` directory:
 | `docs/images/WireFrames/EventsDiscovery.png` | Events browsing and discovery page |
 | `docs/images/WireFrames/EventDetailsPage.png` | Event detail page with description, schedule, and ticket types |
 | `docs/images/WireFrames/SeatLayoutImage.png` | Interactive seat selection layout |
-| `docs/images/WireFrames/MyTicketsPage.png` | Ticket wallet — all purchased tickets |
-| `docs/images/WireFrames/MyRegistrationsPage.png` | My registrations — event registration history |
+| `docs/images/WireFrames/MyTicketsPage.png` | Ticket wallet - all purchased tickets |
+| `docs/images/WireFrames/MyRegistrationsPage.png` | My registrations - event registration history |
 | `docs/images/WireFrames/NotificationsPage.png` | Notification preferences management page |
-| `docs/images/WireFrames/SettingsPage.png` | Account settings — MFA, GDPR, profile |
+| `docs/images/WireFrames/SettingsPage.png` | Account settings - MFA, GDPR, profile |
 | `docs/images/WireFrames/CustomerPortalDashboard.png` | Customer portal dashboard |
 | `docs/images/WireFrames/VendorCatalogPage.png` | Vendor event catalog and management page |
-| `docs/images/WireFrames/EventControlsPage.png` | Event controls — publish, edit, and manage event status |
+| `docs/images/WireFrames/EventControlsPage.png` | Event controls - publish, edit, and manage event status |
 | `docs/images/WireFrames/AdminPortalDashboardImage.png` | Admin portal dashboard |
-| `docs/images/WireFrames/AdminFinanceDashboardPage.png` | Admin finance dashboard — budget approvals and payment oversight |
+| `docs/images/WireFrames/AdminFinanceDashboardPage.png` | Admin finance dashboard - budget approvals and payment oversight |
 | `docs/images/WireFrames/AdminReports.png` | Admin cross-event analytics and reports |
 
 ### EventZen FrontEnd ShowCase
@@ -987,7 +1046,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 🏢 Vendor Portal — Dashboard
+#### 🏢 Vendor Portal - Dashboard
 
 <details open><summary>Vendor Portal Dashboard</summary>
 
@@ -1002,7 +1061,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 🗓 Vendor Portal — Event Operations
+#### 🗓 Vendor Portal - Event Operations
 
 <details open><summary>Vendor Event Operations 1</summary>
 
@@ -1022,7 +1081,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 🏛 Vendor Portal — Venue Bookings
+#### 🏛 Vendor Portal - Venue Bookings
 
 <details open><summary>Vendor Venue Bookings 1</summary>
 
@@ -1052,7 +1111,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 📷 Vendor Portal — Check-In Command Center
+#### 📷 Vendor Portal - Check-In Command Center
 
 <details open><summary>Vendor Check-In Command Center 1</summary>
 
@@ -1067,7 +1126,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 💰 Vendor Portal — Finance & Reports
+#### 💰 Vendor Portal - Finance & Reports
 
 <details open><summary>Vendor Finance Dashboard 1</summary>
 
@@ -1092,7 +1151,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 🛡 Admin Portal — Dashboard
+#### 🛡 Admin Portal - Dashboard
 
 <details open><summary>Admin Portal Dashboard 1</summary>
 
@@ -1107,7 +1166,7 @@ A complete walkthrough of the EventZen platform UI, organized by user journey. C
 
 ---
 
-#### 👥 Admin Portal — Vendor Management & Reports
+#### 👥 Admin Portal - Vendor Management & Reports
 
 <details open><summary>Admin Vendor Management 1</summary>
 
@@ -1204,7 +1263,7 @@ Deloitte_CloudThat_Capstone_Project/
 ├── docker-compose.yml                   # Core application stack (all services + infra)
 ├── docker-compose.vault.yml             # HashiCorp Vault + Vault Agent sidecar config
 ├── README.md
-├── autoscaler-state/                    # Per-service last-scaled state files for EC2 autoscaler
+├── autoscaler-state/                    # Per-service last-scaled state files
 │   ├── auth-service.last_scaled
 │   ├── event-service.last_scaled
 │   ├── ticketing-service.last_scaled
@@ -1324,8 +1383,6 @@ Deloitte_CloudThat_Capstone_Project/
     │       └── 01-create-databases.sql
     │
     ├── infrastructure/                  # Cloud deployment scripts
-    │   ├── deploy-ec2.sh                # Transfer Compose stack to EC2
-    │   ├── ec2-bootstrap.sh             # Install Docker on fresh Amazon Linux
     │   ├── eventzen-autoscaler.sh       # Systemd-managed autoscaler
     │   ├── eventzen-autoscaler.service  # Systemd unit file
     │   ├── render-nginx-prod.sh         # Generate Nginx prod config for domain + TLS
@@ -1483,7 +1540,7 @@ cd Capstone_Project_Deloitte_CloudThat
 | **PowerShell** | 5.1+ | Bootstrap and lifecycle scripts (Windows) |
 | **RAM** | 8 GB minimum | Full stack (20+ containers) |
 
-> All runtime dependencies (Java, .NET, Node.js, MySQL, MongoDB, Kafka, Vault, etc.) run inside Docker containers — no local language runtimes required.
+> All runtime dependencies (Java, .NET, Node.js, MySQL, MongoDB, Kafka, Vault, etc.) run inside Docker containers - no local language runtimes required.
 
 ## 🔐 HashiCorp Vault Setup
 
@@ -1508,7 +1565,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\set-local-vault-secrets.ps1 -
 
 > **Advanced: Additional secret store management commands**
 >
-> **List all stored key names** (without revealing their values — useful for verifying the store is populated):
+> **List all stored key names** (without revealing their values - useful for verifying the store is populated):
 > ```powershell
 > powershell -ExecutionPolicy Bypass -File .\scripts\set-local-vault-secrets.ps1 -ListStoredKeys
 > ```
@@ -1520,7 +1577,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\set-local-vault-secrets.ps1 -
 > ```powershell
 > powershell -ExecutionPolicy Bypass -File .\scripts\set-local-vault-secrets.ps1 -ImportFromEnvFile .\.env -ImportAllFromEnvFile
 > ```
-> Even when the full `.env` is imported, `start-local-vault.ps1` still only resolves and rewrites port-related variables in memory — it does not blindly forward every value.
+> Even when the full `.env` is imported, `start-local-vault.ps1` still only resolves and rewrites port-related variables in memory - it does not blindly forward every value.
 
 **4. Bootstrap Vault Environment (First Run Only)**
 This one-command bootstrap verifies Docker, creates the local secret store under `.secrets/local-vault-secrets.dpapi`, builds the Docker images, and sets up your Vault instance.
@@ -1541,7 +1598,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-local-vault.ps1
 > 5. Renders backend runtime secrets via Vault Agent into in-memory Docker volumes
 > 6. Starts the full Docker Compose stack with Vault-injected secrets
 >
-> **Important — port behaviour:** On each run, `start-local-vault.ps1` probes for available host ports and saves the resolved mappings to `.secrets/local-vault-ports.json`. If you re-run the script while the stack is already up, new ports may be assigned and existing connections will break. **Use `rebuild-local-vault.ps1` instead** for any subsequent container restarts — it reads from the saved port snapshot and never re-probes.
+> **Important - port behaviour:** On each run, `start-local-vault.ps1` probes for available host ports and saves the resolved mappings to `.secrets/local-vault-ports.json`. If you re-run the script while the stack is already up, new ports may be assigned and existing connections will break. **Use `rebuild-local-vault.ps1` instead** for any subsequent container restarts - it reads from the saved port snapshot and never re-probes.
 >
 > To inspect which host port Vault is currently mapped to without restarting anything:
 > ```powershell
@@ -1567,7 +1624,7 @@ Rebuild multiple specific services at once:
 powershell -ExecutionPolicy Bypass -File .\scripts\rebuild-local-vault.ps1 -Services kafka notification-service
 ```
 
-Rebuild without forcing a new Docker image build — uses the existing cached images, which is much faster when only configuration has changed:
+Rebuild without forcing a new Docker image build - uses the existing cached images, which is much faster when only configuration has changed:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\rebuild-local-vault.ps1 -SkipBuild
 ```
@@ -1588,7 +1645,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\stop-local-vault.ps1 -RemoveV
 
 #### Optional: Install the Vault CLI on Windows
 
-The native `vault` CLI is **not required** to run the stack — everything is managed through Docker and the PowerShell scripts. However, if you want direct CLI access to the running Vault instance for manual inspection or advanced key management, install it with one of:
+The native `vault` CLI is **not required** to run the stack - everything is managed through Docker and the PowerShell scripts. However, if you want direct CLI access to the running Vault instance for manual inspection or advanced key management, install it with one of:
 
 ```powershell
 # Using winget (built-in Windows Package Manager)
@@ -1652,11 +1709,11 @@ export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
 > ```bash
 > ./scripts/set-local-vault-secrets.sh --import-from-env-file ./.env --import-all-from-env-file
 > ```
-> **Rotate the passphrase** — interactive mode (the script prompts for both the current and new passphrase):
+> **Rotate the passphrase** - interactive mode (the script prompts for both the current and new passphrase):
 > ```bash
 > ./scripts/set-local-vault-secrets.sh --change-passphrase
 > ```
-> **Rotate the passphrase** — non-interactive mode (useful for CI or scripted environments):
+> **Rotate the passphrase** - non-interactive mode (useful for CI or scripted environments):
 > ```bash
 > export EVENTZEN_LOCAL_VAULT_PASSPHRASE='current-passphrase'
 > export EVENTZEN_LOCAL_VAULT_NEW_PASSPHRASE='new-passphrase'
@@ -1684,7 +1741,7 @@ export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
 > 4. Renders backend runtime secrets via Vault Agent into in-memory Docker volumes
 > 5. Starts the full Docker Compose stack with Vault-injected secrets
 >
-> **Important — port behaviour:** On each run, `start-local-vault.sh` probes for available host ports and saves the resolved mappings to `.secrets/local-vault-ports.json`. If you re-run the script while the stack is already up, new ports may be assigned and existing connections will break. **Use `rebuild-local-vault.sh` instead** for any subsequent container restarts — it reads from the saved port snapshot and never re-probes.
+> **Important - port behaviour:** On each run, `start-local-vault.sh` probes for available host ports and saves the resolved mappings to `.secrets/local-vault-ports.json`. If you re-run the script while the stack is already up, new ports may be assigned and existing connections will break. **Use `rebuild-local-vault.sh` instead** for any subsequent container restarts - it reads from the saved port snapshot and never re-probes.
 >
 > To inspect which host port Vault is currently mapped to without restarting anything:
 > ```bash
@@ -1713,7 +1770,7 @@ export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
 ./scripts/rebuild-local-vault.sh --services kafka notification-service
 ```
 
-Rebuild without forcing a new Docker image build — uses existing cached images, much faster when only configuration has changed:
+Rebuild without forcing a new Docker image build - uses existing cached images, much faster when only configuration has changed:
 ```bash
 export EVENTZEN_LOCAL_VAULT_PASSPHRASE='choose-a-strong-passphrase'
 ./scripts/rebuild-local-vault.sh --skip-build
@@ -1749,7 +1806,7 @@ If you change backend API endpoints, controllers, or models, the published Swagg
 powershell -ExecutionPolicy Bypass -File .\scripts\refresh-swagger-specs.ps1
 ```
 
-**Recommended workflow after backend API changes** — rebuild the affected service first so the new schema is live in the running container, then pull the updated spec:
+**Recommended workflow after backend API changes** - rebuild the affected service first so the new schema is live in the running container, then pull the updated spec:
 ```powershell
 # Replace auth-service with whichever backend service you changed
 powershell -ExecutionPolicy Bypass -File .\scripts\rebuild-local-vault.ps1 -Services auth-service
@@ -1768,12 +1825,12 @@ When the stack is running, the Swagger UI for all backend services is accessible
 | URL | Description |
 |-----|-------------|
 | `http://localhost/docs/` | Hub page linking to all service docs |
-| `http://localhost/docs/auth.html` | Auth Service — Swagger UI |
-| `http://localhost/docs/event.html` | Event Service — Swagger UI |
-| `http://localhost/docs/finance.html` | Finance Service — Swagger UI |
-| `http://localhost/docs/ticketing.html` | Ticketing Service — Swagger UI |
-| `http://localhost/docs/venue-vendor.html` | Venue-Vendor Service — Swagger UI |
-| `http://localhost/docs/notification.html` | Notification Service — Swagger UI |
+| `http://localhost/docs/auth.html` | Auth Service - Swagger UI |
+| `http://localhost/docs/event.html` | Event Service - Swagger UI |
+| `http://localhost/docs/finance.html` | Finance Service - Swagger UI |
+| `http://localhost/docs/ticketing.html` | Ticketing Service - Swagger UI |
+| `http://localhost/docs/venue-vendor.html` | Venue-Vendor Service - Swagger UI |
+| `http://localhost/docs/notification.html` | Notification Service - Swagger UI |
 
 The raw OpenAPI JSON spec for each service is also available directly:
 
@@ -1793,10 +1850,10 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; . .\scripts\vault\lo
 ```
 
 > **Notes:**
-> - `-Scope Process` limits the execution policy change to the current terminal window only — it does not affect system-wide policy settings and is safe to run.
+> - `-Scope Process` limits the execution policy change to the current terminal window only - it does not affect system-wide policy settings and is safe to run.
 > - The encrypted DPAPI store is tied to your Windows user profile and is **never committed to git**. It only exists locally on your machine.
 > - If the store does not exist yet (e.g. on a fresh checkout before bootstrap), create it first by running `set-local-vault-secrets.ps1` without arguments.
-> - The repository includes `.secrets/local-vault-secrets.dpapi.example.json` — a committed template file that shows which secret key names are expected, without storing any real values. This keeps the expected schema visible in version control.
+> - The repository includes `.secrets/local-vault-secrets.dpapi.example.json` - a committed template file that shows which secret key names are expected, without storing any real values. This keeps the expected schema visible in version control.
 
 ### Raw Docker Compose Commands (Vault Stack)
 ```bash
@@ -1854,20 +1911,20 @@ dotnet test .\tests\EventZen.Ticketing.Tests\EventZen.Ticketing.Tests.csproj
 cd backend/services/venue-vendor-service
 npm test
 
-# Venue-Vendor Service — unit tests only
+# Venue-Vendor Service - unit tests only
 npm run test:unit
 
-# Venue-Vendor Service — integration tests only
+# Venue-Vendor Service - integration tests only
 npm run test:integration
 
 # Notification Service (Node.js built-in test runner)
 cd backend/services/notification-service
 npm test
 
-# Notification Service — unit tests only
+# Notification Service - unit tests only
 npm run test:unit
 
-# Notification Service — integration tests only
+# Notification Service - integration tests only
 npm run test:integration
 ```
 

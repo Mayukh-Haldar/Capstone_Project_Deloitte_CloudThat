@@ -81,31 +81,31 @@ eventzen/
 ├── src/
 │   ├── app/
 │   │   ├── components/
-│   │   │   ├── Navigation.tsx       # Main navigation header
-│   │   │   ├── Footer.tsx           # Site footer
-│   │   │   ├── ThemeToggle.tsx      # Theme switcher
-│   │   │   ├── RootLayout.tsx       # App layout wrapper
-│   │   │   ├── NotFound.tsx         # 404 page
-│   │   │   └── LoadingScreen.tsx    # Loading state
+│   │   │   ├── Navigation.jsx       # Main navigation header
+│   │   │   ├── Footer.jsx           # Site footer
+│   │   │   ├── ThemeToggle.jsx      # Theme switcher
+│   │   │   ├── RootLayout.jsx       # App layout wrapper
+│   │   │   ├── NotFound.jsx         # 404 page
+│   │   │   └── LoadingScreen.jsx    # Loading state
 │   │   ├── pages/
-│   │   │   ├── Home.tsx             # Landing page
-│   │   │   ├── Events.tsx           # Event discovery
-│   │   │   ├── Admin.tsx            # Admin dashboard
-│   │   │   ├── Venues.tsx           # Venue management
-│   │   │   ├── Finance.tsx          # Financial reports
-│   │   │   └── Reports.tsx          # Detailed analytics
-│   │   ├── routes.tsx               # Route configuration
-│   │   └── App.tsx                  # Root component
+│   │   │   ├── Home.jsx             # Landing page
+│   │   │   ├── Events.jsx           # Event discovery
+│   │   │   ├── Admin.jsx            # Admin dashboard
+│   │   │   ├── Venues.jsx           # Venue management
+│   │   │   ├── Finance.jsx          # Financial reports
+│   │   │   └── Reports.jsx          # Detailed analytics
+│   │   ├── routes.jsx               # Route configuration
+│   │   └── App.jsx                  # Root component
 │   ├── imports/
-│   │   ├── LandingPage.tsx          # Landing screen source
-│   │   ├── Authentication.tsx       # Authentication screen source
-│   │   ├── EventDiscoveryDetails.tsx
-│   │   ├── AdminDashboard.tsx
-│   │   ├── VenueVendorManagement.tsx
-│   │   ├── StaffQrCheckIn.tsx
-│   │   ├── AttendeeTicketWallet.tsx
-│   │   ├── FinanceReportingDashboard.tsx
-│   │   └── DetailedExpenseReport.tsx
+│   │   ├── LandingPage.jsx          # Landing screen source
+│   │   ├── Authentication.jsx       # Authentication screen source
+│   │   ├── EventDiscoveryDetails.jsx
+│   │   ├── AdminDashboard.jsx
+│   │   ├── VenueVendorManagement.jsx
+│   │   ├── StaffQrCheckIn.jsx
+│   │   ├── AttendeeTicketWallet.jsx
+│   │   ├── FinanceReportingDashboard.jsx
+│   │   └── DetailedExpenseReport.jsx
 │   └── styles/
 │       ├── theme.css                # Theme variables & dark mode
 │       └── fonts.css                # Font imports

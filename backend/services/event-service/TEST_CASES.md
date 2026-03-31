@@ -6,8 +6,8 @@
 |---|---|---|---|
 | Unit Tests (Service Layer) | 32 | EVENT-UT | `EventServiceTest.java` |
 | Controller Layer Tests (HTTP Integration) | 44 | EVENT-CT | `EventControllerTest.java` |
-| Smoke / Context Load | 1 | — | `EventServiceApplicationTests.java` |
-| Integration Tests (pre-existing) | 4 | — | `EventControllerIntegrationTest.java` |
+| Smoke / Context Load | 1 | - | `EventServiceApplicationTests.java` |
+| Integration Tests (pre-existing) | 4 | - | `EventControllerIntegrationTest.java` |
 | System Tests (Postman) | 21 | EVENT-ST | `src/test/postman/` |
 | **Total Automated (Maven)** | **81** | | |
 | **Total incl. Postman** | **102** | | |
@@ -159,7 +159,7 @@ newman run src/test/postman/event-service-postman-collection.json \
 
 ## How to Run
 
-### Maven (Unit + Controller tests — no running service needed)
+### Maven (Unit + Controller tests - no running service needed)
 
 ```powershell
 cd backend/services/event-service
@@ -180,7 +180,7 @@ mvn test -Dtest="EventControllerIntegrationTest"
 mvn test -Dtest="EventServiceTest,EventControllerTest,EventControllerIntegrationTest"
 ```
 
-### Newman (System tests — requires running services)
+### Newman (System tests - requires running services)
 
 ```powershell
 # 1. Start services

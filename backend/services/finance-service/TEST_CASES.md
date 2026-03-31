@@ -90,19 +90,19 @@
 
 ## HTTP Integration Tests (MockMvc + H2)
 
-Auth uses dev-header fallback (`x-user-id`, `x-user-email`, `x-user-roles`) — works because MockMvc uses `serverName=localhost`.
+Auth uses dev-header fallback (`x-user-id`, `x-user-email`, `x-user-roles`) - works because MockMvc uses `serverName=localhost`.
 
 ### Budget Endpoints
 
 | ID | Method & Path | Auth | Description | Expected Status | Expected Body |
 |---|---|---|---|---|---|
 | FIN-CT-001 | `POST /api/v1/events/{id}/budget` | ORGANIZER | Create valid budget | 201 | `status=DRAFT`, items present |
-| FIN-CT-002 | `POST /api/v1/events/{id}/budget` | none | No authentication | 401 | — |
-| FIN-CT-003 | `POST /api/v1/events/{id}/budget` | ATTENDEE | Insufficient role | 403 | — |
+| FIN-CT-002 | `POST /api/v1/events/{id}/budget` | none | No authentication | 401 | - |
+| FIN-CT-003 | `POST /api/v1/events/{id}/budget` | ATTENDEE | Insufficient role | 403 | - |
 | FIN-CT-004 | `POST /api/v1/events/{id}/budget` | ORGANIZER | Duplicate event budget | 409 | `code=FIN-4003` |
 | FIN-CT-005 | `GET /api/v1/events/{id}/budget` | ORGANIZER | Get existing budget | 200 | Budget JSON |
 | FIN-CT-006 | `PUT /api/v1/budgets/{id}/approve` | ADMIN | Approve budget | 200 | `status=APPROVED` |
-| FIN-CT-007 | `PUT /api/v1/budgets/{id}/approve` | ORGANIZER | Not allowed to approve | 403 | — |
+| FIN-CT-007 | `PUT /api/v1/budgets/{id}/approve` | ORGANIZER | Not allowed to approve | 403 | - |
 | FIN-CT-008 | `POST /api/v1/budgets/{id}/items` | ORGANIZER | Add line item | 201 | Item count incremented |
 
 ### Expense Endpoints
@@ -128,7 +128,7 @@ Auth uses dev-header fallback (`x-user-id`, `x-user-email`, `x-user-roles`) — 
 |---|---|---|---|---|---|
 | FIN-CT-016 | `GET /api/v1/events/{id}/reports/financial` | ADMIN | Full report | 200 | `totalRevenue`, `totalExpenses`, budget present |
 | FIN-CT-017 | `GET /api/v1/events/{id}/reports/financial` | ORGANIZER | Report for owned event | 200 | Report JSON |
-| FIN-CT-018 | `GET /api/v1/events/{id}/reports/financial` | ATTENDEE | Not authorized | 403 | — |
+| FIN-CT-018 | `GET /api/v1/events/{id}/reports/financial` | ATTENDEE | Not authorized | 403 | - |
 
 ---
 

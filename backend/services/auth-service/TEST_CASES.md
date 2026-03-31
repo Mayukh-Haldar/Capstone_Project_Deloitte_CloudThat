@@ -164,22 +164,22 @@ These extend the original 11 manual system tests with fully automated Postman te
 
 | Test ID | Type | Scenario | Request | Expected |
 |---------|------|----------|---------|----------|
-| AUTH-ST-012 | System | Auth — Update profile | PATCH /api/v1/auth/me/profile | 200 + updated lastName |
-| AUTH-ST-013 | System | Auth — MFA setup | POST /api/v1/auth/mfa/setup | 200 + secret + otpauthUri |
-| AUTH-ST-014 | System | Auth — Logout | POST /api/v1/auth/logout | 200 + "Logout successful" |
-| AUTH-ST-015 | System | Admin — Bootstrap token | POST /api/v1/auth/login (admin) | 200 + adminAccessToken captured |
-| AUTH-ST-016 | System | Admin — List users | GET /api/v1/users | 200 + paged content |
-| AUTH-ST-016b | System | Users — Non-admin access rejected | GET /api/v1/users (non-admin) | 403 |
-| AUTH-ST-017 | System | Admin — Assign role | PUT /api/v1/users/{id}/roles | 200 + updated roles |
-| AUTH-ST-018 | System | Admin — Deactivate user | DELETE /api/v1/users/{id} | 200 + message |
-| AUTH-ST-019 | System | Admin — Reactivate user | PATCH /api/v1/users/{id}/reactivate | 200 + message |
-| AUTH-ST-020 | System | Admin — GDPR delete | DELETE /api/v1/users/{id}/gdpr/delete | 200 + message |
-| AUTH-ST-021 | System | Account Requests — Submit vendor request | POST /api/v1/account-requests | 200 + PENDING |
-| AUTH-ST-022 | System | Account Requests — List mine | GET /api/v1/account-requests/me | 200 + array |
-| AUTH-ST-023 | System | Account Requests — Public reactivation status | GET /api/v1/account-requests/public/reactivation/status | 200 + boolean flags |
-| AUTH-ST-024 | System | Account Requests — Public reactivation request | POST /api/v1/account-requests/public/reactivation | 200 + message |
-| AUTH-ST-025 | System | Account Requests — Admin list (filtered) | GET /api/v1/account-requests/admin?status=PENDING | 200 + array |
-| AUTH-ST-026 | System | Account Requests — Admin approve | PATCH /api/v1/account-requests/admin/{id}/approve | 200 + APPROVED |
+| AUTH-ST-012 | System | Auth - Update profile | PATCH /api/v1/auth/me/profile | 200 + updated lastName |
+| AUTH-ST-013 | System | Auth - MFA setup | POST /api/v1/auth/mfa/setup | 200 + secret + otpauthUri |
+| AUTH-ST-014 | System | Auth - Logout | POST /api/v1/auth/logout | 200 + "Logout successful" |
+| AUTH-ST-015 | System | Admin - Bootstrap token | POST /api/v1/auth/login (admin) | 200 + adminAccessToken captured |
+| AUTH-ST-016 | System | Admin - List users | GET /api/v1/users | 200 + paged content |
+| AUTH-ST-016b | System | Users - Non-admin access rejected | GET /api/v1/users (non-admin) | 403 |
+| AUTH-ST-017 | System | Admin - Assign role | PUT /api/v1/users/{id}/roles | 200 + updated roles |
+| AUTH-ST-018 | System | Admin - Deactivate user | DELETE /api/v1/users/{id} | 200 + message |
+| AUTH-ST-019 | System | Admin - Reactivate user | PATCH /api/v1/users/{id}/reactivate | 200 + message |
+| AUTH-ST-020 | System | Admin - GDPR delete | DELETE /api/v1/users/{id}/gdpr/delete | 200 + message |
+| AUTH-ST-021 | System | Account Requests - Submit vendor request | POST /api/v1/account-requests | 200 + PENDING |
+| AUTH-ST-022 | System | Account Requests - List mine | GET /api/v1/account-requests/me | 200 + array |
+| AUTH-ST-023 | System | Account Requests - Public reactivation status | GET /api/v1/account-requests/public/reactivation/status | 200 + boolean flags |
+| AUTH-ST-024 | System | Account Requests - Public reactivation request | POST /api/v1/account-requests/public/reactivation | 200 + message |
+| AUTH-ST-025 | System | Account Requests - Admin list (filtered) | GET /api/v1/account-requests/admin?status=PENDING | 200 + array |
+| AUTH-ST-026 | System | Account Requests - Admin approve | PATCH /api/v1/account-requests/admin/{id}/approve | 200 + APPROVED |
 
 **Run with Newman (CLI):**
 
