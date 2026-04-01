@@ -2,7 +2,7 @@
 
 ![EventZen](https://img.shields.io/badge/EventZen-v1.0-blue?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18.3.1-61dafb?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?style=for-the-badge&logo=typescript)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![Tailwind](https://img.shields.io/badge/Tailwind-4.1-38bdf8?style=for-the-badge&logo=tailwind-css)
 
 A next-generation, cloud-native event management platform designed to orchestrate excellence and reimagine world-class experiences.
@@ -298,7 +298,7 @@ Edit `/src/styles/theme.css`:
 
 ### Core
 - **React 18.3.1** - UI framework
-- **TypeScript** - Type safety
+- **JavaScript** - Modern ES Modules
 - **Vite** - Build tool
 - **React Router 7** - Routing
 
@@ -399,7 +399,7 @@ Edit `/src/styles/theme.css`:
 This project follows the EventZen PRD specifications. Key principles:
 
 1. **Component-driven** development
-2. **Type-safe** with TypeScript
+2. **Modern JavaScript** (ES Modules)
 3. **Accessible** by default
 4. **Responsive** for all devices
 5. **Themeable** with CSS variables

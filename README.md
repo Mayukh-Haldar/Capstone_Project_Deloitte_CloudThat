@@ -9,7 +9,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18"/>
   <img src="https://img.shields.io/badge/Vite-6.3-B73BFE?style=flat-square&logo=vite&logoColor=white" alt="Vite 6"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript"/>
   <img src="https://img.shields.io/badge/Spring_Boot-4.0-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot"/>
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10"/>
   <img src="https://img.shields.io/badge/Node.js-20-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js"/>
@@ -184,7 +184,7 @@ flowchart TB
 |-----------|---------|---------|
 | React | 18.3.1 | UI framework with lazy loading & Suspense |
 | Vite | 6.3.5 | Build tool & dev server |
-| TypeScript | 5.8.2 | Type safety |
+| JavaScript | ES2024 | UI scripting |
 | Tailwind CSS | 4.1.12 | Utility-first styling |
 | React Router | 7.13 | Client-side routing |
 | React Hook Form | 7.55 | Form management |
