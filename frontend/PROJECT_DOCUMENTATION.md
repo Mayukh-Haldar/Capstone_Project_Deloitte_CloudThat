@@ -1,6 +1,6 @@
 # EventZen - Event Management Platform
 
-A professional, feature-rich event management platform built with React, TypeScript, and Tailwind CSS.
+A professional, feature-rich event management platform built with React, JavaScript, and Tailwind CSS.
 
 ## 🎨 Features
 
@@ -9,7 +9,7 @@ A professional, feature-rich event management platform built with React, TypeScr
 - ✅ **Dark/Light theme toggle** using next-themes
 - ✅ **Responsive design** optimized for all devices
 - ✅ **Professional UI** aligned to the project design system
-- ✅ **Type-safe** with TypeScript
+- ✅ **Modern JavaScript** (ES Modules)
 - ✅ **Modern styling** with Tailwind CSS v4
 
 ### Pages Implemented
@@ -153,7 +153,7 @@ The theme uses a cohesive color system:
 
 ### Frontend
 - **React 18**: Modern React with hooks
-- **TypeScript**: Type-safe development
+- **JavaScript**: Modern ES Modules
 - **Tailwind CSS v4**: Utility-first styling
 - **React Router v7**: Client-side routing
 - **next-themes**: Theme management
