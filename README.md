@@ -41,6 +41,7 @@
 - [📊 Monitoring & Observability](#-monitoring--observability)
 - [🗺 Diagrams & Design Documentation](#-diagrams--design-documentation)
 - [📂 Project Structure](#-project-structure)
+- [🔐 ENV file example and prerequisites for hashi corp vault](#-env-file-example-and-prerequisites-for-hashi-corp-vault)
 - [🚀 Getting Started](#-getting-started)
 - [🧪 Testing](#-testing)
 - [🌐 Access Points](#-access-points)
@@ -1533,6 +1534,67 @@ Deloitte_CloudThat_Capstone_Project/
                 │                          signature, templateRenderer
                 └── validators/          # notificationValidators, preferenceValidators, etc.
 ```
+
+---
+
+## 🔐 ENV file example and prerequisites for hashi corp vault
+
+Use [`.env.example`](./.env.example) as the committed template for local setup. Copy it to `.env`, fill in the required values, and then follow the linked setup guides below to get the project running locally.
+
+### Recommended flow
+
+1. Copy `.env.example` to `.env`.
+2. Replace the placeholder values with your own project-specific values.
+3. Import the managed secret keys into the local Vault-backed secret store before starting the stack.
+4. Start the platform with the Vault helper scripts described in the Getting Started section below.
+
+### Quick `.env` example
+
+```env
+# Frontend and public URLs
+APP_ROOT=/absolute/path/to/Capstone_Project_Deloitte_CloudThat
+FRONTEND_ORIGIN=http://localhost
+AUTH_APP_BASE_URL=http://localhost
+
+# Frontend integrations
+VITE_SITE_URL=http://localhost
+VITE_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+VITE_FIREBASE_API_KEY=your-firebase-web-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+VITE_FIREBASE_APP_ID=your-firebase-app-id
+VITE_FIREBASE_VAPID_KEY=your-web-push-vapid-public-key
+
+# Auth / email
+AUTH_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+AUTH_SMTP_HOST=smtp.gmail.com
+AUTH_SMTP_PORT=587
+AUTH_SMTP_USERNAME=your-email@gmail.com
+AUTH_SMTP_PASSWORD=your-16-character-app-password
+
+# Finance
+FINANCE_RAZORPAY_ENABLED=true
+FINANCE_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxx
+FINANCE_RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+
+# Notification push
+NOTIFICATION_FIREBASE_PROJECT_ID=your-project-id
+NOTIFICATION_FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+NOTIFICATION_FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+### Linked setup guides
+
+- [`docs/Env_Prerequisites/OVERVIEW.md`](./docs/Env_Prerequisites/OVERVIEW.md) - complete environment overview, variable groups, and recommended setup order.
+- [`docs/Env_Prerequisites/hashicorp-vault-prerequisites.md`](./docs/Env_Prerequisites/hashicorp-vault-prerequisites.md) - local Vault prerequisites, managed secret keys, and Windows/Linux import workflow.
+- [`docs/Env_Prerequisites/firebase.md`](./docs/Env_Prerequisites/firebase.md) - Firebase web app config, Cloud Messaging VAPID key, and Firebase Admin service-account setup.
+- [`docs/Env_Prerequisites/google-oauth-client-id.md`](./docs/Env_Prerequisites/google-oauth-client-id.md) - Google OAuth client creation for frontend and auth-service sign-in.
+- [`docs/Env_Prerequisites/gmail-smtp-app-password.md`](./docs/Env_Prerequisites/gmail-smtp-app-password.md) - Gmail SMTP and app-password setup for auth and notification emails.
+- [`docs/Env_Prerequisites/razorpay.md`](./docs/Env_Prerequisites/razorpay.md) - Razorpay dashboard setup for payments.
+- [`docs/Env_Prerequisites/mongodb-connection-strings.md`](./docs/Env_Prerequisites/mongodb-connection-strings.md) - MongoDB Atlas connection-string workflow if you are not using the bundled local MongoDB containers.
+- [`docs/Env_Prerequisites/env-variable-reference.md`](./docs/Env_Prerequisites/env-variable-reference.md) - explanation of the remaining local URLs, ports, autoscaler, Kafka, MinIO, MySQL, and feature-flag variables.
 
 ---
 
