@@ -1,284 +1,183 @@
-# EventZen - Event Management Platform
+# Frontend Project Documentation
 
-A professional, feature-rich event management platform built with React, JavaScript, and Tailwind CSS.
+This document gives a little more detail about how the frontend is organized and what the main parts of the app are responsible for.
 
-## 🎨 Features
+## Stack
 
-### Core Features
-- ✅ **Multi-page application** with React Router
-- ✅ **Dark/Light theme toggle** using next-themes
-- ✅ **Responsive design** optimized for all devices
-- ✅ **Professional UI** aligned to the project design system
-- ✅ **Modern JavaScript** (ES Modules)
-- ✅ **Modern styling** with Tailwind CSS v4
+- React 18
+- Vite 6
+- JavaScript with ES modules
+- React Router 7
+- Tailwind CSS v4
+- next-themes
+- Framer Motion
+- Recharts
+- Firebase Web SDK
+- SignalR client
 
-### Pages Implemented
+## Application layout
 
-#### Public Pages
-1. **Landing Page** (`/`)
-   - Hero section with event showcase
-   - Featured events
-   - Service highlights
-   - Client testimonials
-   - Newsletter signup
+The frontend is structured around `src/app`.
 
-2. **Event Discovery** (`/events`)
-   - Event listings with filtering
-   - Search functionality
-   - Event details view
-   - Ticket purchase options
+### `src/app/App.jsx`
 
-3. **Authentication** (`/auth`)
-   - Sign in / Sign up toggle
-   - Email/Password login
-   - Social login (Google, GitHub)
-   - Multi-factor authentication support
-   - Password recovery
+The root app wraps the router with:
 
-#### Customer/Attendee Pages
-4. **Ticket Wallet** (`/my/tickets`)
-   - Digital ticket storage
-   - QR codes for event entry
-   - Upcoming and past events
-   - Ticket transfer options
+- `ThemeProvider`
+- `SidebarProvider`
+- `NotificationRealtimeBridge`
+- `PushNotificationBootstrap`
+- `Toaster`
 
-#### Admin Portal
-5. **Admin Dashboard** (`/admin/dashboard`)
-   - Real-time KPI metrics
-   - Active events overview
-   - Budget tracking
-   - Recent activity feed
-   - Registration trends
-   - Quick actions
+### `src/app/routes.jsx`
 
-6. **Venue & Vendor Management** (`/admin/venues`, `/admin/vendors`)
-   - Venue inventory
-   - Vendor catalog
-   - Contract management
-   - Booking calendar
-   - Availability tracking
+All browser routes are declared here. Public, authenticated, customer, vendor, and admin areas are separated by route guards.
 
-7. **Finance Reporting** (`/admin/finance`)
-   - Budget overview
-   - Expense tracking
-   - Revenue analysis
-   - Financial alerts
-   - Budget vs actual spending
+### `src/app/components/`
 
-8. **Detailed Reports** (`/admin/reports`)
-   - Expense breakdown
-   - Budget utilization
-   - Transaction history
-   - Export to CSV/PDF
+Shared application components live here, including:
 
-#### Staff Pages
-9. **QR Check-in** (`/staff/checkin`)
-   - Real-time QR code scanner
-   - Check-in statistics
-   - Guest list search
-   - Manual check-in
-   - Live attendance counters
+- layout wrappers
+- route guards
+- navigation
+- theme toggle
+- scroll helpers
+- realtime notification bootstrap
+- shared UI primitives under `components/ui`
 
-## 🎯 Theme System
+### `src/app/pages/`
 
-### Light Mode (Default)
-- Clean, professional appearance
-- High contrast for readability
-- Optimized for daytime use
+Each page-level screen lives here. Current page modules include:
 
-### Dark Mode
-- Reduced eye strain
-- OLED-friendly colors
-- Perfect for evening events
+- `Home`
+- `Auth`
+- `Events`
+- `EventDetails`
+- `EventCheckout`
+- `SeatSelection`
+- `Tickets`
+- `TicketPass`
+- `Registrations`
+- `Notifications`
+- `AccountSettings`
+- `CustomerPortal`
+- `VendorDashboard`
+- `Venues`
+- `VenueBookingCheckout`
+- `CheckIn`
+- `Finance`
+- `Reports`
+- `Admin`
+- `AdminEvents`
+- `AdminVendors`
+- policy/help pages
 
-### How to Toggle
-- Click the sun/moon icon in the top-right corner
-- Theme preference is saved automatically
-- Smooth transitions between modes
+### `src/app/lib/`
 
-## 🗺️ Navigation
+This folder holds API and feature-specific helpers, including:
 
-### Main Navigation
-- **Home**: Landing page with event highlights
-- **Events**: Browse and discover events
-- **My Tickets**: Access your digital tickets
-- **Admin Dropdown**:
-  - Dashboard
-  - Venues
-  - Attendees
-  - Finance
-  - Reports
+- auth API helpers
+- event, finance, ticketing, notification, and venue-vendor API clients
+- Firebase push helpers
+- SignalR seat hub helpers
+- PDF and invoice helpers
+- role utilities
 
-### Mobile Navigation
-- Hamburger menu on mobile devices
-- Full-screen navigation drawer
-- Touch-optimized interactions
+### `src/styles/`
 
-## 🎨 Design System
+Global styles, theme tokens, and font definitions live here.
 
-### Colors
-The theme uses a cohesive color system:
-- **Primary**: `#1132d4` (EventZen Blue)
-- **Background**: Dynamic (white/dark)
-- **Foreground**: Dynamic (dark/light)
-- **Accent colors** for different event categories
+## Route groups
 
-### Typography
-- Font: Inter (Professional, modern)
-- Clear hierarchy (H1-H4)
-- Responsive font sizes
-- Optimized line heights
+### Public routes
 
-### Components
-- Buttons with hover states
-- Cards with shadows
-- Forms with validation states
-- Navigation with active states
-- Modals and overlays
+- `/`
+- `/auth`
+- `/events`
+- `/events/:id`
+- `/help`
+- `/privacy`
+- `/terms`
+- `/cookies`
 
-## 📱 Responsive Design
+### Authenticated routes
 
-### Breakpoints
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1024px
-- **Desktop**: > 1024px
+- `/events/:id/checkout/:ticketTypeId`
+- `/events/:id/seats/:ticketTypeId`
+- `/my/tickets`
+- `/my/tickets/:registrationId/pass`
+- `/my/registrations`
+- `/account/notifications`
+- `/account/settings`
 
-### Mobile Optimizations
-- Touch-friendly buttons (min 44px)
-- Simplified navigation
-- Collapsible sections
-- Optimized images
+### Customer route
 
-## 🚀 Technical Stack
+- `/customer/dashboard`
 
-### Frontend
-- **React 18**: Modern React with hooks
-- **JavaScript**: Modern ES Modules
-- **Tailwind CSS v4**: Utility-first styling
-- **React Router v7**: Client-side routing
-- **next-themes**: Theme management
+### Vendor routes
 
-### UI Libraries
-- **Lucide React**: Icon system
-- **Recharts**: Data visualization
-- **Radix UI**: Accessible components
-- **clsx**: Conditional classes
+- `/vendor/dashboard`
+- `/vendor/events`
+- `/vendor/venues`
+- `/vendor/venues/checkout/:bookingId`
+- `/vendor/check-in`
+- `/vendor/finance`
+- `/vendor/reports`
 
-## 📦 Project Structure
+### Admin routes
 
-```
-src/
-├── app/
-│   ├── components/
-│   │   ├── Navigation.jsx       # Main navigation
-│   │   ├── ThemeToggle.jsx      # Theme switcher
-│   │   ├── RootLayout.jsx       # App layout wrapper
-│   │   └── NotFound.jsx         # 404 page
-│   ├── pages/
-│   │   ├── Home.jsx             # Landing page wrapper
-│   │   ├── Events.jsx           # Events page wrapper
-│   │   ├── Admin.jsx            # Admin dashboard wrapper
-│   │   ├── Venues.jsx           # Venues page wrapper
-│   │   ├── Finance.jsx          # Finance page wrapper
-│   │   └── Reports.jsx          # Reports page wrapper
-│   ├── routes.jsx               # Route definitions
-│   └── App.jsx                  # Root component
-├── imports/
-│   ├── LandingPage.jsx          # Landing screen source
-│   ├── Authentication.jsx       # Authentication screen source
-│   ├── EventDiscoveryDetails.jsx
-│   ├── AdminDashboard.jsx
-│   ├── VenueVendorManagement.jsx
-│   ├── StaffQrCheckIn.jsx
-│   ├── AttendeeTicketWallet.jsx
-│   ├── FinanceReportingDashboard.jsx
-│   └── DetailedExpenseReport.jsx
-└── styles/
-    ├── theme.css                # Theme variables
-    └── fonts.css                # Font imports
-```
+- `/admin/dashboard`
+- `/admin/events`
+- `/admin/check-in`
+- `/admin/venues`
+- `/admin/vendors`
+- `/admin/finance`
+- `/admin/reports`
 
-## 🎯 Key Features by Page
+## Environment variables
 
-### Landing Page
-- Animated hero section
-- Event cards with images
-- Service highlights with icons
-- Trusted by section
-- Footer with links
+The frontend uses `frontend/.env.example` as the template.
 
-### Event Discovery
-- Filter by category, date, location
-- Sort options
-- Event cards with details
-- Quick registration
-- Event details modal
+### Service URLs
 
-### Admin Dashboard
-- Live metrics (events, attendees, revenue)
-- Interactive charts
-- Budget alerts
-- Activity timeline
-- Quick actions
+- `VITE_SITE_URL`
+- `VITE_AUTH_SERVICE_URL`
+- `VITE_EVENT_SERVICE_URL`
+- `VITE_VENUE_VENDOR_SERVICE_URL`
+- `VITE_TICKETING_SERVICE_URL`
+- `VITE_FINANCE_SERVICE_URL`
+- `VITE_NOTIFICATION_SERVICE_URL`
 
-### Finance Dashboard
-- Budget tracking
-- Expense breakdown
-- Revenue analysis
-- Financial alerts
-- Export reports
+### Identity and push
 
-### QR Check-in
-- Camera viewfinder
-- Real-time scanning
-- Check-in statistics
-- Manual search
-- Staff terminal info
+- `VITE_GOOGLE_CLIENT_ID`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_VAPID_KEY`
 
-## 🔒 Security Features
+## Local development notes
 
-- JWT token authentication
-- HTTPS enforcement
-- XSS protection
-- CSRF tokens
-- Secure session management
+- `npm run dev` starts Vite with the browser opening at `/`.
+- `vite.config.js` proxies API requests to the backend services during local development.
+- `/socket.io` is proxied to the notification service.
+- `/seat-hub` is proxied to the ticketing service for SignalR seat updates.
+- `npm run build` generates the sitemap before bundling.
 
-## 🌐 Accessibility
+## Assets and public files
 
-- ARIA labels
-- Keyboard navigation
-- Screen reader support
-- High contrast mode
-- Focus indicators
+The `public/` folder currently includes:
 
-## 📊 Performance
+- `favicon.svg`
+- `firebase-messaging-sw.js`
+- `robots.txt`
+- `sitemap.xml`
+- cursor assets
 
-- Code splitting
-- Lazy loading
-- Image optimization
-- Caching strategies
-- CDN delivery
+## Related files
 
-## 🎨 Customization
-
-### Changing Theme Colors
-Edit `/src/styles/theme.css`:
-```css
-:root {
-  --primary: #1132d4; /* Your brand color */
-  /* ... other variables */
-}
-```
-
-### Adding New Pages
-1. Create component in `/src/app/pages/`
-2. Add route in `/src/app/routes.jsx`
-3. Update navigation in `/src/app/components/Navigation.jsx`
-
-## 🤝 Contributing
-
-This project follows the EventZen PRD specifications. All components are designed to be modular and reusable.
-
-## 📝 License
-
-Confidential - EventZen Event Management Platform
+- [README.md](./README.md)
+- [Root README](../README.md)

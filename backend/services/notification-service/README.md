@@ -1,19 +1,51 @@
-# EventZen Notification Service
+# Notification Service
 
-Node.js + Express + MongoDB notification microservice for EventZen. It follows the PRD requirements for:
+Node.js notification service for EventZen.
 
-- Multi-channel dispatch across `EMAIL`, `SMS`, `PUSH`, `IN_APP`, and `WEBHOOK`
-- Template-driven content with Handlebars and version history
-- Per-user notification preferences
-- Delivery logging and admin observability
-- Internal event-trigger endpoint that can later be fed by Kafka producers
-- Frontend inbox/preferences integration through `/api/v1/notifications/*`
+- Base URL: `http://localhost:8086`
+- API prefix: `/api/v1`
+- OpenAPI JSON: `/openapi.json`
+- Health: `/api/v1/health`
+- Metrics: `/metrics`
 
-## Gmail SMTP setup
+## What it handles
 
-Real email delivery is supported through SMTP and works with Gmail App Passwords.
+- In-app notifications
+- Email delivery through SMTP
+- Push delivery through Firebase Admin SDK
+- Template management and preview
+- User notification preferences
+- Push token registration
+- Webhook subscriptions
+- Newsletter subscriptions
+- Kafka consumption and BullMQ wiring when enabled
 
-Add these to your notification-service `.env`:
+## Run locally
+
+Copy `.env.example` to `.env`, update the values you need, then run:
+
+```bash
+npm install
+npm start
+```
+
+Use `npm run dev` if you want auto-reload during development.
+
+## Important configuration
+
+Core local variables from `.env.example`:
+
+```env
+PORT=8086
+MONGO_URI=mongodb://localhost:27017/eventzen_notifications
+AUTH_JWT_SECRET=replace-with-auth-jwt-secret
+AUTH_JWT_ISSUER=eventzen-auth-service
+CORS_ORIGIN=http://localhost:5173
+INTERNAL_SERVICE_KEY=replace-with-internal-service-key
+ENABLE_REQUEST_LOGS=true
+```
+
+SMTP delivery:
 
 ```env
 NOTIFICATION_SMTP_HOST=smtp.gmail.com
@@ -26,71 +58,76 @@ NOTIFICATION_MAIL_FROM_EMAIL=no-reply@example.com
 NOTIFICATION_MAIL_FROM_NAME=EventZen
 ```
 
-Notes:
-
-- Use a Gmail App Password, not your normal Gmail password.
-- If these values are absent, the email channel falls back to the mock provider so local development still works.
-- The service also accepts the auth-service env names like `AUTH_SMTP_HOST` as fallback, so you can share one SMTP setup across services.
-
-## Firebase push setup
-
-Real push delivery is supported through Firebase Cloud Messaging.
-
-Add these to the notification-service `.env`:
+Firebase push:
 
 ```env
-NOTIFICATION_FIREBASE_PROJECT_ID=your-firebase-project-id
-NOTIFICATION_FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-NOTIFICATION_FIREBASE_PRIVATE_KEY=<set-via-local-secret-store>
+NOTIFICATION_FIREBASE_PROJECT_ID=replace-with-firebase-project-id
+NOTIFICATION_FIREBASE_CLIENT_EMAIL=replace-with-firebase-client-email
+NOTIFICATION_FIREBASE_PRIVATE_KEY=replace-with-firebase-private-key
 ```
 
-The frontend also needs Firebase Web SDK config and a VAPID key so browsers can register push tokens.
+Queue and messaging:
 
-If Firebase credentials are not configured, the push channel falls back to a mock provider.
+- `ENABLE_KAFKA`
+- `KAFKA_BROKERS`
+- `KAFKA_CLIENT_ID`
+- `KAFKA_CONSUMER_GROUP`
+- `KAFKA_TOPICS`
+- `ENABLE_BULLMQ`
+- `REDIS_URL`
+- `ENABLE_SOCKET_IO`
+- `SEED_DEFAULT_TEMPLATES`
 
-## Run
+If SMTP or Firebase credentials are missing, the service falls back to local-safe mock behavior for those channels.
 
-```bash
-npm install
-npm start
-```
+## Main routes
 
-Copy [`.env.example`](/c:/Users/mayuk/OneDrive/Desktop/Document_Folders_in_Desktop/Deloitte_Capstone_Project/backend/services/notification-service/.env.example) to `.env` and adjust values as needed.
-
-Default local port: `8086`
-
-## Main endpoints
+### Notifications
 
 - `POST /api/v1/notifications/send`
 - `GET /api/v1/notifications`
-- `GET /api/v1/notifications/:id`
-- `PATCH /api/v1/notifications/:id/read`
-- `DELETE /api/v1/notifications/:id`
+- `GET /api/v1/notifications/{id}`
+- `PATCH /api/v1/notifications/{id}/read`
+- `DELETE /api/v1/notifications/{id}`
+- `GET /api/v1/notifications/delivery-logs`
+
+### Templates and preferences
+
 - `GET /api/v1/notifications/templates`
 - `POST /api/v1/notifications/templates`
-- `PUT /api/v1/notifications/templates/:id`
-- `POST /api/v1/notifications/templates/:id/preview`
+- `PUT /api/v1/notifications/templates/{id}`
+- `POST /api/v1/notifications/templates/{id}/preview`
 - `GET /api/v1/notifications/preferences`
 - `POST /api/v1/notifications/preferences`
-- `GET /api/v1/notifications/delivery-logs`
-- `GET/POST/DELETE /api/v1/notifications/webhook-subscriptions`
 
-## Auth
+### Webhooks, push tokens, newsletter
 
-- User-facing routes accept JWT bearer tokens compatible with the existing auth service.
-- In `development` and `test`, you can use:
-  - `x-user-id`
-  - `x-user-email`
-  - `x-user-roles`
-- Internal trigger route uses `x-internal-service-key`.
+- `GET /api/v1/notifications/webhook-subscriptions`
+- `POST /api/v1/notifications/webhook-subscriptions`
+- `DELETE /api/v1/notifications/webhook-subscriptions/{id}`
+- `GET /api/v1/notifications/push-tokens`
+- `POST /api/v1/notifications/push-tokens`
+- `DELETE /api/v1/notifications/push-tokens/{id}`
+- `POST /api/v1/notifications/newsletter`
 
-## Delivery behavior
+## Auth notes
 
-Current provider implementations are safe local mocks so the service works end-to-end without SES/Twilio/FCM credentials. The provider abstraction is in [channelProviders.js](/c:/Users/mayuk/OneDrive/Desktop/Document_Folders_in_Desktop/Deloitte_Capstone_Project/backend/services/notification-service/src/providers/channelProviders.js) and is ready to swap with real integrations.
+- User-facing routes accept bearer JWTs compatible with `auth-service`.
+- In `development` and `test`, the service also accepts `x-user-id`, `x-user-email`, and `x-user-roles`.
+- Internal trigger flows use `x-internal-service-key`.
 
-## Kafka and BullMQ
+## Tests
 
-- Kafka bootstrap is scaffolded behind `ENABLE_KAFKA=true`
-- BullMQ/Redis config is present in env/package setup for future retry queue wiring
+Run the main test suite with:
 
-This keeps the service runnable in the current repo even though the existing backend services are not yet publishing Kafka events locally.
+```bash
+npm test
+```
+
+Useful subsets:
+
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:system:postman
+```

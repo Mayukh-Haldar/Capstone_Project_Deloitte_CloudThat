@@ -1,494 +1,131 @@
-# Auth Service API Documentation
+# Auth Service
 
 Spring Boot auth service for EventZen.
 
 - Base URL: `http://localhost:8081`
 - API prefix: `/api/v1`
-- Auth scheme: `Authorization: Bearer <access_token>`
-- Default content type: `application/json`
+- Swagger UI: `/swagger-ui.html`
+- Health: `/actuator/health`
+- Metrics: `/actuator/prometheus`
 
-## Quick Start
+## What it handles
 
-1. Configure database and auth env vars (`.env` is supported).
-2. Run:
+- Email/password registration and login
+- Google sign-in
+- JWT access and refresh token flow
+- Email verification and password reset
+- MFA setup and verification
+- User profile and admin user management
+- Account requests for vendor access, reactivation, and GDPR-style deletion
+
+## Run locally
+
+Copy `.env.example` to `.env`, fill in the values you need, then start the service:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Service runs on port `8081` by default.
+Default port is `8081`.
 
-### Email delivery setup
+## Important configuration
 
-Real verification/reset emails are sent only when SMTP is configured. Otherwise the service falls back to logging tokens in the auth-service console.
+Common local variables from `.env.example`:
 
-Add these to `backend/services/auth-service/.env` to enable real mail delivery:
+```env
+AUTH_DB_URL=jdbc:mysql://localhost:3306/eventzen_users?createDatabaseIfNotExist=true&serverTimezone=UTC
+AUTH_DB_USERNAME=root
+AUTH_DB_PASSWORD=replace-with-auth-db-password
+AUTH_JWT_SECRET=replace-with-auth-jwt-secret
+AUTH_JWT_ISSUER=eventzen-auth-service
+AUTH_APP_BASE_URL=http://localhost:5173
+AUTH_CRYPTO_SECRET=replace-with-auth-crypto-secret
+AUTH_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+AUTH_BOOTSTRAP_ADMIN_PASSWORD=replace-with-strong-admin-password
+AUTH_GOOGLE_CLIENT_ID=
+NOTIFICATION_SERVICE_BASE_URL=http://localhost:8086
+```
+
+### Email delivery
+
+If SMTP is configured, the service sends real verification and reset emails. If not, it falls back to debug/log-based behavior.
 
 ```env
 AUTH_SMTP_HOST=smtp.gmail.com
 AUTH_SMTP_PORT=587
 AUTH_SMTP_USERNAME=replace-with-smtp-username
-AUTH_SMTP_PASSWORD=<set-via-local-secret-store>
+AUTH_SMTP_PASSWORD=replace-with-smtp-password
 AUTH_SMTP_AUTH=true
 AUTH_SMTP_STARTTLS=true
 AUTH_MAIL_FROM_EMAIL=no-reply@example.com
 AUTH_MAIL_FROM_NAME=EventZen
-AUTH_APP_BASE_URL=http://localhost:5173
 ```
 
-For Gmail, use an App Password rather than your normal Google password.
-
-## Authentication and Authorization
-
-- Public endpoints (no JWT required):
-  - `GET /`
-  - `GET /actuator/health`
-  - `POST /api/v1/auth/register`
-  - `POST /api/v1/auth/login`
-  - `POST /api/v1/auth/google/login`
-  - `POST /api/v1/auth/refresh`
-  - `POST /api/v1/auth/forgot-password`
-  - `POST /api/v1/auth/reset-password`
-  - `POST /api/v1/auth/email-verification/resend`
-  - `POST /api/v1/auth/email-verification/confirm`
-- Admin only:
-  - All ` /api/v1/users/**`
-- All other endpoints require a valid access token.
+For Gmail, use an app password rather than your normal account password.
 
 ## Roles
 
-`RoleName` values:
+The service uses these role names:
 
 - `ADMIN`
 - `ORGANIZER`
 - `VENDOR`
 - `ATTENDEE`
 
-Notes:
-- Self-registration and Google signup do not allow creating admin accounts directly. If `requestedRole` is missing or `ADMIN`, service defaults to `ATTENDEE`.
+Self-registration and Google sign-in do not let users create admin accounts directly. If `requestedRole` is missing or set to `ADMIN`, the service defaults the account to `ATTENDEE`.
 
-## Endpoint Reference
+## Main routes
 
-### Service
+### Public
 
-#### `GET /`
-- Auth: Public
-- Description: Service status ping.
-- Response `200`:
+- `GET /`
+- `GET /actuator/health`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/google/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/forgot-password`
+- `POST /api/v1/auth/reset-password`
+- `POST /api/v1/auth/email-verification/resend`
+- `POST /api/v1/auth/email-verification/confirm`
+- `POST /api/v1/account-requests/public/reactivation`
+- `GET /api/v1/account-requests/public/reactivation/status`
 
-```json
-{
-  "service": "eventzen-auth-service",
-  "status": "UP",
-  "timestamp": "2026-03-14T17:30:00+05:30"
-}
+### Authenticated user
+
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/auth/me`
+- `PATCH /api/v1/auth/me/profile`
+- `POST /api/v1/auth/mfa/setup`
+- `POST /api/v1/auth/mfa/verify`
+- `POST /api/v1/account-requests`
+- `GET /api/v1/account-requests/me`
+- `DELETE /api/v1/account-requests/{id}`
+
+### Admin
+
+- `GET /api/v1/users`
+- `PUT /api/v1/users/{id}/roles`
+- `DELETE /api/v1/users/{id}`
+- `PATCH /api/v1/users/{id}/reactivate`
+- `DELETE /api/v1/users/{id}/gdpr/delete`
+- `GET /api/v1/account-requests/admin`
+- `PATCH /api/v1/account-requests/admin/{id}/approve`
+- `PATCH /api/v1/account-requests/admin/{id}/reject`
+
+## Notes
+
+- Bearer JWTs are required for protected routes.
+- When `auth.features.expose-debug-tokens=true`, some auth flows return debug headers for local testing.
+- `DataSeeder` bootstraps roles, permissions, and the initial admin account on startup.
+- The service records audit logs for sensitive account actions.
+
+## Tests
+
+Run the test suite with:
+
+```bash
+./mvnw test
 ```
 
-#### `GET /actuator/health`
-- Auth: Public
-- Description: Spring Boot health endpoint.
-
-#### `GET /actuator/info`
-- Auth: JWT required
-- Description: Spring Boot info endpoint.
-
-### Auth (`/api/v1/auth`)
-
-#### `POST /api/v1/auth/register`
-- Auth: Public
-- Body:
-
-```json
-{
-  "firstName": "Mayuk",
-  "lastName": "Das",
-  "email": "mayuk@example.com",
-  "password": "StrongPass123!",
-  "phone": "+1 555 000 1234",
-  "requestedRole": "ATTENDEE"
-}
-```
-
-- Response `200`: `AuthResponse`
-- Optional response header (only when `auth.features.expose-debug-tokens=true`):
-  - `X-Debug-Email-Verification-Token`
-
-#### `POST /api/v1/auth/login`
-- Auth: Public
-- Body:
-
-```json
-{
-  "email": "mayuk@example.com",
-  "password": "StrongPass123!",
-  "otpCode": "123456"
-}
-```
-
-- `otpCode` is required when user has MFA enabled.
-- Response `200`: `AuthResponse`
-
-#### `POST /api/v1/auth/google/login`
-- Auth: Public
-- Body:
-
-```json
-{
-  "idToken": "google-id-token",
-  "requestedRole": "ATTENDEE",
-  "otpCode": "123456"
-}
-```
-
-- `otpCode` is required when user has MFA enabled.
-- Response `200`: `AuthResponse`
-
-#### `POST /api/v1/auth/refresh`
-- Auth: Public
-- Body:
-
-```json
-{
-  "refreshToken": "jwt-refresh-token"
-}
-```
-
-- Response `200`: rotated `AuthResponse`
-
-#### `POST /api/v1/auth/logout`
-- Auth: JWT required
-- Body:
-
-```json
-{
-  "refreshToken": "jwt-refresh-token"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "Logout successful"
-}
-```
-
-#### `GET /api/v1/auth/me`
-- Auth: JWT required
-- Response `200`: `CurrentUserResponse`
-
-#### `PATCH /api/v1/auth/me/profile`
-- Auth: JWT required
-- Body (all fields optional; if provided for first/last/email they must not be blank after trim):
-
-```json
-{
-  "firstName": "Mayuk",
-  "lastName": "Das",
-  "email": "new-email@example.com",
-  "phone": "+1 555 111 2222"
-}
-```
-
-- Response `200`: updated `CurrentUserResponse`
-- If email changes, account is marked unverified and verification email is re-issued.
-- Optional response header (only when `auth.features.expose-debug-tokens=true`):
-  - `X-Debug-Email-Verification-Token`
-
-#### `POST /api/v1/auth/mfa/setup`
-- Auth: JWT required
-- Response `200`:
-
-```json
-{
-  "secret": "base32secret",
-  "otpauthUri": "otpauth://totp/EventZen:user@example.com?secret=..."
-}
-```
-
-#### `POST /api/v1/auth/mfa/verify`
-- Auth: JWT required
-- Body:
-
-```json
-{
-  "code": "123456"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "MFA verified"
-}
-```
-
-#### `POST /api/v1/auth/forgot-password`
-- Auth: Public
-- Body:
-
-```json
-{
-  "email": "mayuk@example.com"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "If the email exists, password reset instructions have been sent"
-}
-```
-
-- Optional response header (only when `auth.features.expose-debug-tokens=true`):
-  - `X-Debug-Password-Reset-Token`
-
-#### `POST /api/v1/auth/reset-password`
-- Auth: Public
-- Body:
-
-```json
-{
-  "token": "reset-token",
-  "newPassword": "NewStrongPass123!"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "Password reset successful"
-}
-```
-
-#### `POST /api/v1/auth/email-verification/resend`
-- Auth: Public
-- Body:
-
-```json
-{
-  "email": "mayuk@example.com"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "If the email exists, verification instructions have been sent"
-}
-```
-
-- Optional response header (only when `auth.features.expose-debug-tokens=true`):
-  - `X-Debug-Email-Verification-Token`
-
-#### `POST /api/v1/auth/email-verification/confirm`
-- Auth: Public
-- Body:
-
-```json
-{
-  "token": "email-verification-token"
-}
-```
-
-- Response `200`:
-
-```json
-{
-  "message": "Email verified"
-}
-```
-
-### User Management (`/api/v1/users`) - Admin Only
-
-#### `GET /api/v1/users?page=0&size=20`
-- Auth: JWT required (`ROLE_ADMIN`)
-- Query params:
-  - `page` (default `0`)
-  - `size` (default `20`)
-- Response `200`: `PagedResponse<UserResponse>`
-
-#### `PUT /api/v1/users/{id}/roles`
-- Auth: JWT required (`ROLE_ADMIN`)
-- Body:
-
-```json
-{
-  "roles": ["ORGANIZER", "VENDOR"]
-}
-```
-
-- Response `200`: updated `UserResponse`
-
-#### `DELETE /api/v1/users/{id}`
-- Auth: JWT required (`ROLE_ADMIN`)
-- Description: Soft deactivates user and revokes refresh tokens.
-- Response `200`:
-
-```json
-{
-  "message": "User deactivated"
-}
-```
-
-#### `PATCH /api/v1/users/{id}/reactivate`
-- Auth: JWT required (`ROLE_ADMIN`)
-- Response `200`:
-
-```json
-{
-  "message": "User reactivated"
-}
-```
-
-#### `DELETE /api/v1/users/{id}/gdpr/delete`
-- Auth: JWT required (`ROLE_ADMIN`)
-- Description: GDPR anonymization flow (roles removed, tokens revoked, account anonymized).
-- Response `200`:
-
-```json
-{
-  "message": "User deleted for GDPR request"
-}
-```
-
-## Response Models
-
-### `AuthResponse`
-
-```json
-{
-  "accessToken": "jwt-access-token",
-  "refreshToken": "jwt-refresh-token",
-  "expiresInSeconds": 900,
-  "user": {
-    "id": "uuid",
-    "firstName": "Mayuk",
-    "lastName": "Das",
-    "email": "mayuk@example.com",
-    "phone": "+1 555 000 1234",
-    "active": true,
-    "emailVerified": false,
-    "mfaEnabled": false,
-    "roles": ["ATTENDEE"],
-    "permissions": ["auth:read"],
-    "createdAt": "2026-03-14T10:00:00Z"
-  }
-}
-```
-
-### `CurrentUserResponse`
-
-```json
-{
-  "id": "uuid",
-  "firstName": "Mayuk",
-  "lastName": "Das",
-  "email": "mayuk@example.com",
-  "phone": "+1 555 000 1234",
-  "active": true,
-  "emailVerified": true,
-  "mfaEnabled": true,
-  "roles": ["ATTENDEE"],
-  "permissions": ["auth:read"],
-  "createdAt": "2026-03-14T10:00:00Z"
-}
-```
-
-### `UserResponse`
-
-```json
-{
-  "id": "uuid",
-  "firstName": "Mayuk",
-  "lastName": "Das",
-  "email": "mayuk@example.com",
-  "phone": "+1 555 000 1234",
-  "active": true,
-  "emailVerified": true,
-  "mfaEnabled": false,
-  "roles": ["ATTENDEE"],
-  "createdAt": "2026-03-14T10:00:00Z"
-}
-```
-
-### `PagedResponse<T>`
-
-```json
-{
-  "content": [],
-  "page": 0,
-  "size": 20,
-  "totalElements": 1,
-  "totalPages": 1
-}
-```
-
-### Message response
-
-```json
-{
-  "message": "..."
-}
-```
-
-## Error Format
-
-All errors are JSON:
-
-```json
-{
-  "timestamp": "2026-03-14T10:00:00Z",
-  "status": 400,
-  "error": "VALIDATION_ERROR",
-  "code": "AUTH-1003",
-  "message": "Request validation failed",
-  "path": "/api/v1/auth/register",
-  "traceId": "trace-or-generated-uuid",
-  "details": [
-    { "field": "email", "issue": "must be a well-formed email address" }
-  ]
-}
-```
-
-Common auth/business error codes used by this service include:
-- `AUTH-1001` invalid credentials/JWT/refresh issues
-- `AUTH-1002` insufficient permission or inactive account
-- `AUTH-1003` validation failure
-- `AUTH-1004` duplicate user/email conflict
-- `AUTH-1005` refresh token not found
-- `AUTH-1006` user not found
-- `AUTH-1007` invalid MFA verification code
-- `AUTH-1008` invalid role assignment
-- `AUTH-1010` email not verified for login (feature-flag dependent)
-- `AUTH-1011` invalid password reset token
-- `AUTH-1012` invalid email verification token
-- `AUTH-1013` profile field cannot be blank
-- `AUTH-1014` invalid Google token
-- `AUTH-1015` Google email not verified
-- `AUTH-1018` Google Sign In not configured
-- `AUTH-1019` invalid debug Google token format
-- `SYS-9001` internal/system error
-
-## Optional Request Headers
-
-- `Authorization: Bearer <access_token>` for protected endpoints.
-- `X-Forwarded-For`: optional; used for audit logging.
-- `X-Trace-Id`: optional; echoed or generated in error responses.
-
-## Useful Configuration
-
-From `application.properties`:
-
-- `server.port` (default `8081`)
-- `auth.jwt.access-token-minutes` (default `15`)
-- `auth.jwt.refresh-token-days` (default `7`)
-- `auth.features.password-reset-minutes` (default `30`)
-- `auth.features.email-verification-hours` (default `24`)
-- `auth.features.require-verified-email-for-login` (default `false`)
-- `auth.features.expose-debug-tokens` (default `false`)
-- `auth.features.google-client-id` (required for real Google token validation)
+There is also a Postman collection under `src/test/postman/`.
